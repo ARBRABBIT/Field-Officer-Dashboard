@@ -114,9 +114,6 @@ export function SiteVisitDetailScreen({
       : "#GLCSOS 088"
   );
   const [phone, setPhone] = React.useState(initialRecord?.phone || "+91 9849012345");
-  const [visitStatus, setVisitStatus] = React.useState<"Completed" | "In Progress" | "Scheduled">(
-    initialRecord?.status || "Completed"
-  );
   const [scheduledHeader, setScheduledHeader] = React.useState(initialRecord?.visitDate || "25th Sep - 10:00 AM");
 
   // 1. Visit Details Form state (Retained as requested)
@@ -549,15 +546,16 @@ export function SiteVisitDetailScreen({
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
-                  <span className="text-text-secondary">Farmland ID:</span>
-                  <input
-                    type="text"
-                    value={farmlandId}
-                    onChange={(e) => setFarmlandId(e.target.value)}
-                    className="font-semibold text-accent bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none transition-colors w-28 text-sm"
-                  />
-                  <span>•</span>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-text-muted">
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className="text-text-secondary">Farmland ID:</span>
+                    <input
+                      type="text"
+                      value={farmlandId}
+                      onChange={(e) => setFarmlandId(e.target.value)}
+                      className="font-semibold text-accent bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none transition-colors w-28 text-sm"
+                    />
+                  </div>
                   <div className="inline-flex items-center gap-1.5 text-text-secondary">
                     <Phone className="size-3.5 text-accent" />
                     <input
@@ -571,34 +569,17 @@ export function SiteVisitDetailScreen({
               </div>
             </div>
 
-            {/* Visit Status & Date Display */}
-            <div className="flex items-center gap-6 self-end md:self-center">
-              {/* Status Badge */}
-              <div className="flex items-center gap-2 rounded-full bg-[#E5F6E6] border border-[#00801F]/30 px-3.5 py-1 text-xs font-semibold text-[#00801F]">
-                <span className="size-2 rounded-full bg-[#00801F]" />
-                <select
-                  value={visitStatus}
-                  onChange={(e) => setVisitStatus(e.target.value as "Completed" | "In Progress" | "Scheduled")}
-                  className="bg-transparent font-semibold text-xs text-[#00801F] focus:outline-none cursor-pointer"
-                >
-                  <option value="Completed">Completed</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Scheduled">Scheduled</option>
-                </select>
-              </div>
-
-              {/* Timestamp */}
-              <div className="text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
-                  Site Visit
-                </p>
-                <input
-                  type="text"
-                  value={scheduledHeader}
-                  onChange={(e) => setScheduledHeader(e.target.value)}
-                  className="font-bold text-base text-text text-right bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none transition-colors w-44"
-                />
-              </div>
+            {/* Date Display */}
+            <div className="text-right self-end md:self-center">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                Site Visit
+              </p>
+              <input
+                type="text"
+                value={scheduledHeader}
+                onChange={(e) => setScheduledHeader(e.target.value)}
+                className="font-bold text-base text-text text-right bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none transition-colors w-44"
+              />
             </div>
           </div>
         </Card>
