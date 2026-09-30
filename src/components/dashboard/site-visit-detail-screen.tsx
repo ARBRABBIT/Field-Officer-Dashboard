@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Clock,
   FileCheck,
   FileEdit,
   FileText,
@@ -124,7 +125,37 @@ export function SiteVisitDetailScreen({
   const [buyerFrom, setBuyerFrom] = React.useState(initialRecord?.buyerFrom || "Vijayawada, Benz Circle");
   const [scheduled, setScheduled] = React.useState(initialRecord?.visitDate || "25th Sep - 10:00 AM");
   const [checkedIn, setCheckedIn] = React.useState(initialRecord?.checkedIn || "2026-09-25T10:12");
-  const [duration, setDuration] = React.useState(initialRecord?.duration || "1 hr 25 min");
+
+  // Helper to parse duration string (e.g. "1 hr 25 min", "45 min", "2 hrs")
+  const parseInitialDuration = (val?: string) => {
+    if (!val) return { h: 1, m: 25 };
+    const hMatch = val.match(/(\d+)\s*(?:hr|hour|h)/i);
+    const mMatch = val.match(/(\d+)\s*(?:min|minute|m)/i);
+    const h = hMatch ? parseInt(hMatch[1], 10) : 0;
+    const m = mMatch ? parseInt(mMatch[1], 10) : 0;
+    return { h: isNaN(h) ? 0 : h, m: isNaN(m) ? 0 : m };
+  };
+
+  const initialDur = React.useMemo(
+    () => parseInitialDuration(initialRecord?.duration || "1 hr 25 min"),
+    [initialRecord?.duration]
+  );
+  const [durationHours, setDurationHours] = React.useState<number>(initialDur.h);
+  const [durationMinutes, setDurationMinutes] = React.useState<number>(initialDur.m);
+
+  const handleDurationChange = (newH: number, newM: number) => {
+    setDurationHours(newH);
+    setDurationMinutes(newM);
+  };
+
+  const minuteOptions = React.useMemo(() => {
+    const defaults = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+    if (!defaults.includes(durationMinutes)) {
+      return [...defaults, durationMinutes].sort((a, b) => a - b);
+    }
+    return defaults;
+  }, [durationMinutes]);
+
   const [visitors, setVisitors] = React.useState(initialRecord?.visitors || `${initialRecord?.customer || "Pooja"} + spouse`);
   const [accompaniedBy, setAccompaniedBy] = React.useState(initialRecord?.accompaniedBy || "Ramesh Babu");
 
@@ -634,13 +665,47 @@ export function SiteVisitDetailScreen({
                 />
               </FormField>
 
-              {/* Duration */}
+              {/* Duration (hr and min selector) */}
               <FormField label="DURATION">
-                <Input
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="text-sm text-text"
-                />
+                <div className="flex h-11 items-center rounded-xl border border-border bg-surface px-3.5 gap-2 transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-3 focus-within:ring-accent/20 hover:border-border-strong">
+                  <Clock className="size-4 text-accent shrink-0" aria-hidden="true" />
+
+                  {/* Hours selector */}
+                  <div className="relative flex-1 flex items-center min-w-0">
+                    <select
+                      aria-label="Duration hours"
+                      value={durationHours}
+                      onChange={(e) => handleDurationChange(Number(e.target.value), durationMinutes)}
+                      className="w-full appearance-none bg-transparent pr-5 text-sm font-semibold text-text focus:outline-none cursor-pointer"
+                    >
+                      {Array.from({ length: 13 }, (_, i) => (
+                        <option key={i} value={i} className="bg-surface text-text">
+                          {i} {i === 1 ? "hr" : "hrs"}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-0.5 size-3.5 text-text-muted" />
+                  </div>
+
+                  <span className="text-border-strong select-none font-medium px-1">/</span>
+
+                  {/* Minutes selector */}
+                  <div className="relative flex-1 flex items-center min-w-0">
+                    <select
+                      aria-label="Duration minutes"
+                      value={durationMinutes}
+                      onChange={(e) => handleDurationChange(durationHours, Number(e.target.value))}
+                      className="w-full appearance-none bg-transparent pr-5 text-sm font-semibold text-text focus:outline-none cursor-pointer"
+                    >
+                      {minuteOptions.map((m) => (
+                        <option key={m} value={m} className="bg-surface text-text">
+                          {m} min
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-0.5 size-3.5 text-text-muted" />
+                  </div>
+                </div>
               </FormField>
 
               {/* Visitors */}
