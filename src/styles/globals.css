@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--glc-background);
+  --color-surface: var(--glc-surface);
+  --color-surface-subtle: var(--glc-surface-subtle);
+  --color-surface-muted: var(--glc-surface-muted);
+  --color-surface-hover: var(--glc-surface-hover);
+  --color-surface-selected: var(--glc-surface-selected);
+  --color-text: var(--glc-text);
+  --color-text-secondary: var(--glc-text-secondary);
+  --color-text-muted: var(--glc-text-muted);
+  --color-text-inverse: var(--glc-text-inverse);
+  --color-border: var(--glc-border);
+  --color-border-strong: var(--glc-border-strong);
+  --color-accent: var(--glc-accent);
+  --color-accent-hover: var(--glc-accent-hover);
+  --color-accent-soft: var(--glc-accent-soft);
+  --color-success: var(--glc-success);
+  --color-success-soft: var(--glc-success-soft);
+  --color-warning: var(--glc-warning);
+  --color-warning-soft: var(--glc-warning-soft);
+  --color-danger: var(--glc-danger);
+  --color-danger-soft: var(--glc-danger-soft);
+  --color-info: var(--glc-info);
+  --color-info-soft: var(--glc-info-soft);
+
+  --radius-xs: var(--glc-radius-xs);
+  --radius-sm: var(--glc-radius-sm);
+  --radius-md: var(--glc-radius-md);
+  --radius-lg: var(--glc-radius-lg);
+  --radius-xl: var(--glc-radius-xl);
+  --radius-2xl: var(--glc-radius-2xl);
+
+  --shadow-low: var(--glc-shadow-low);
+  --shadow-medium: var(--glc-shadow-medium);
+  --shadow-high: var(--glc-shadow-high);
+
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 90rem;
+}
+
+:root {
+  color-scheme: light;
+  --glc-background: #f2f2f2;
+  --glc-surface: #ffffff;
+  --glc-surface-subtle: #f9fafb;
+  --glc-surface-muted: #f3f4f6;
+  --glc-surface-hover: #eef0e9;
+  --glc-surface-selected: #f9fce9;
+  --glc-text: #1a1c1d;
+  --glc-text-secondary: #45474c;
+  --glc-text-muted: #64748b;
+  --glc-text-inverse: #ffffff;
+  --glc-border: #e2e8f0;
+  --glc-border-strong: #c0c7d2;
+  --glc-accent: #2780c4;
+  --glc-accent-hover: #1c5f9d;
+  --glc-accent-soft: #eaf3fb;
+  --glc-success: #00801f;
+  --glc-success-soft: #e5f6e6;
+  --glc-warning: #d97706;
+  --glc-warning-soft: #fef3c7;
+  --glc-danger: #c91c20;
+  --glc-danger-soft: #fee2e2;
+  --glc-info: #2563eb;
+  --glc-info-soft: #eaf3fb;
+
+  --glc-radius-xs: 4px;
+  --glc-radius-sm: 8px;
+  --glc-radius-md: 12px;
+  --glc-radius-lg: 16px;
+  --glc-radius-xl: 24px;
+  --glc-radius-2xl: 32px;
+  --glc-shadow-low: 0 2px 8px rgb(15 23 42 / 0.05);
+  --glc-shadow-medium: 0 8px 24px rgb(15 23 42 / 0.08);
+  --glc-shadow-high: 0 18px 48px rgb(15 23 42 / 0.16);
+
+  --glc-duration-fast: 120ms;
+  --glc-duration-normal: 180ms;
+  --glc-duration-slow: 260ms;
+  --glc-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --glc-overlay: rgb(26 28 29 / 0.42);
+  --glc-disabled-opacity: 0.48;
+}
+
+* {
+  border-color: var(--glc-border);
+}
+
+html {
+  background: var(--glc-background);
+}
+
+body {
+  margin: 0;
+  background: var(--glc-background);
+  color: var(--glc-text);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--glc-accent-soft);
+  color: var(--glc-accent-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@utility glc-focus {
+  outline: none;
+  &:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--glc-accent) 28%, transparent);
+  }
+}
+
+@utility text-display {
+  font-size: 2.5rem;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+@utility text-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+@utility text-heading {
+  font-size: 1.125rem;
+  line-height: 1.625rem;
+  font-weight: 600;
+}
+
+@utility text-body {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  font-weight: 400;
+}
+
+@utility text-label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+}
+
+@utility text-caption {
+  font-size: 0.625rem;
+  line-height: 0.875rem;
+  font-weight: 500;
+}
