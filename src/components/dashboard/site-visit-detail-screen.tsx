@@ -142,6 +142,8 @@ export function SiteVisitDetailScreen({
   );
   const [durationHours, setDurationHours] = React.useState<number>(initialDur.h);
   const [durationMinutes, setDurationMinutes] = React.useState<number>(initialDur.m);
+  const [isHoursOpen, setIsHoursOpen] = React.useState(false);
+  const [isMinutesOpen, setIsMinutesOpen] = React.useState(false);
 
   const handleDurationChange = (newH: number, newM: number) => {
     setDurationHours(newH);
@@ -665,46 +667,128 @@ export function SiteVisitDetailScreen({
                 />
               </FormField>
 
-              {/* Duration (hr and min selector) */}
+              {/* Duration (Custom UI hr and min dropdown selectors) */}
               <FormField label="DURATION">
-                <div className="flex h-11 items-center rounded-xl border border-border bg-surface px-3.5 gap-2 transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-3 focus-within:ring-accent/20 hover:border-border-strong">
+                <div
+                  className={`flex h-11 items-center rounded-xl border bg-surface px-3.5 gap-2 transition-[border-color,box-shadow] hover:border-border-strong ${
+                    isHoursOpen || isMinutesOpen
+                      ? "border-accent ring-3 ring-accent/20"
+                      : "border-border"
+                  }`}
+                >
                   <Clock className="size-4 text-accent shrink-0" aria-hidden="true" />
 
-                  {/* Hours selector */}
-                  <div className="relative flex-1 flex items-center min-w-0">
-                    <select
-                      aria-label="Duration hours"
-                      value={durationHours}
-                      onChange={(e) => handleDurationChange(Number(e.target.value), durationMinutes)}
-                      className="w-full appearance-none bg-transparent pr-5 text-sm font-semibold text-text focus:outline-none cursor-pointer"
-                    >
-                      {Array.from({ length: 13 }, (_, i) => (
-                        <option key={i} value={i} className="bg-surface text-text">
-                          {i} {i === 1 ? "hr" : "hrs"}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-0.5 size-3.5 text-text-muted" />
-                  </div>
+                  {/* Hours Custom Popover */}
+                  <PopoverPrimitive.Root open={isHoursOpen} onOpenChange={setIsHoursOpen}>
+                    <PopoverPrimitive.Trigger asChild>
+                      <button
+                        type="button"
+                        className="flex-1 min-w-0 flex items-center justify-between text-sm font-semibold text-text hover:text-accent transition-colors py-1 cursor-pointer select-none group outline-none focus:outline-none"
+                        aria-label="Select duration hours"
+                      >
+                        <span className="truncate">
+                          {durationHours} {durationHours === 1 ? "hr" : "hrs"}
+                        </span>
+                        <ChevronDown
+                          className={`size-3.5 shrink-0 text-text-muted transition-transform duration-200 group-hover:text-accent ${
+                            isHoursOpen ? "rotate-180 text-accent" : ""
+                          }`}
+                        />
+                      </button>
+                    </PopoverPrimitive.Trigger>
+
+                    <PopoverPrimitive.Portal>
+                      <PopoverPrimitive.Content
+                        sideOffset={8}
+                        align="start"
+                        className="z-50 w-36 max-h-60 overflow-y-auto rounded-2xl border border-border/80 bg-surface p-1.5 text-text shadow-high outline-none animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-150"
+                      >
+                        <div className="space-y-0.5">
+                          <p className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                            Hours
+                          </p>
+                          {Array.from({ length: 13 }, (_, i) => {
+                            const isSelected = i === durationHours;
+                            return (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => {
+                                  handleDurationChange(i, durationMinutes);
+                                  setIsHoursOpen(false);
+                                }}
+                                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer select-none ${
+                                  isSelected
+                                    ? "bg-accent-soft text-accent font-semibold"
+                                    : "text-text hover:bg-surface-hover hover:text-accent font-medium"
+                                }`}
+                              >
+                                <span>
+                                  {i} {i === 1 ? "hr" : "hrs"}
+                                </span>
+                                {isSelected && <Check className="size-3.5 text-accent" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </PopoverPrimitive.Content>
+                    </PopoverPrimitive.Portal>
+                  </PopoverPrimitive.Root>
 
                   <span className="text-border-strong select-none font-medium px-1">/</span>
 
-                  {/* Minutes selector */}
-                  <div className="relative flex-1 flex items-center min-w-0">
-                    <select
-                      aria-label="Duration minutes"
-                      value={durationMinutes}
-                      onChange={(e) => handleDurationChange(durationHours, Number(e.target.value))}
-                      className="w-full appearance-none bg-transparent pr-5 text-sm font-semibold text-text focus:outline-none cursor-pointer"
-                    >
-                      {minuteOptions.map((m) => (
-                        <option key={m} value={m} className="bg-surface text-text">
-                          {m} min
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-0.5 size-3.5 text-text-muted" />
-                  </div>
+                  {/* Minutes Custom Popover */}
+                  <PopoverPrimitive.Root open={isMinutesOpen} onOpenChange={setIsMinutesOpen}>
+                    <PopoverPrimitive.Trigger asChild>
+                      <button
+                        type="button"
+                        className="flex-1 min-w-0 flex items-center justify-between text-sm font-semibold text-text hover:text-accent transition-colors py-1 cursor-pointer select-none group outline-none focus:outline-none"
+                        aria-label="Select duration minutes"
+                      >
+                        <span className="truncate">{durationMinutes} min</span>
+                        <ChevronDown
+                          className={`size-3.5 shrink-0 text-text-muted transition-transform duration-200 group-hover:text-accent ${
+                            isMinutesOpen ? "rotate-180 text-accent" : ""
+                          }`}
+                        />
+                      </button>
+                    </PopoverPrimitive.Trigger>
+
+                    <PopoverPrimitive.Portal>
+                      <PopoverPrimitive.Content
+                        sideOffset={8}
+                        align="start"
+                        className="z-50 w-36 max-h-60 overflow-y-auto rounded-2xl border border-border/80 bg-surface p-1.5 text-text shadow-high outline-none animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-150"
+                      >
+                        <div className="space-y-0.5">
+                          <p className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                            Minutes
+                          </p>
+                          {minuteOptions.map((m) => {
+                            const isSelected = m === durationMinutes;
+                            return (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => {
+                                  handleDurationChange(durationHours, m);
+                                  setIsMinutesOpen(false);
+                                }}
+                                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer select-none ${
+                                  isSelected
+                                    ? "bg-accent-soft text-accent font-semibold"
+                                    : "text-text hover:bg-surface-hover hover:text-accent font-medium"
+                                }`}
+                              >
+                                <span>{m} min</span>
+                                {isSelected && <Check className="size-3.5 text-accent" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </PopoverPrimitive.Content>
+                    </PopoverPrimitive.Portal>
+                  </PopoverPrimitive.Root>
                 </div>
               </FormField>
 
