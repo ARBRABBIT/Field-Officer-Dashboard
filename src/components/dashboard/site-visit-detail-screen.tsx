@@ -104,17 +104,15 @@ export function SiteVisitDetailScreen({
     }, 180);
   };
 
-  // Header & Customer details (Retained from visit or initialized from record)
-  const [customerName, setCustomerName] = React.useState(initialRecord?.customer || "Pooja");
-  const [farmlandId, setFarmlandId] = React.useState(
-    initialRecord
-      ? initialRecord.farmlandId.startsWith("#")
-        ? initialRecord.farmlandId
-        : `#${initialRecord.farmlandId}`
-      : "#GLCSOS 088"
-  );
-  const [phone, setPhone] = React.useState(initialRecord?.phone || "+91 9849012345");
-  const [scheduledHeader, setScheduledHeader] = React.useState(initialRecord?.visitDate || "25th Sep - 10:00 AM");
+  // Header & Customer details
+  const customerName = initialRecord?.customer || "Pooja";
+  const farmlandId = initialRecord
+    ? initialRecord.farmlandId.startsWith("#")
+      ? initialRecord.farmlandId
+      : `#${initialRecord.farmlandId}`
+    : "#GLCSOS 088";
+  const phone = initialRecord?.phone || "+91 9849012345";
+  const scheduledHeader = initialRecord?.visitDate || "25th Sep - 10:00 AM";
 
   // 1. Visit Details Form state (Retained as requested)
   const [propertyId, setPropertyId] = React.useState(initialRecord?.propertyId || "GLC SOS 07");
@@ -536,34 +534,18 @@ export function SiteVisitDetailScreen({
               </div>
 
               <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="font-bold text-xl text-text bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none transition-colors max-w-[200px]"
-                    placeholder="Customer Name"
-                  />
-                </div>
+                <h1 className="font-bold text-xl text-text">
+                  {customerName}
+                </h1>
 
-                <div className="flex flex-wrap items-center gap-3 text-sm text-text-muted">
+                <div className="flex flex-wrap items-center gap-4 text-sm text-text-muted">
                   <div className="inline-flex items-center gap-1.5">
                     <span className="text-text-secondary">Farmland ID:</span>
-                    <input
-                      type="text"
-                      value={farmlandId}
-                      onChange={(e) => setFarmlandId(e.target.value)}
-                      className="font-semibold text-accent bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none transition-colors w-28 text-sm"
-                    />
+                    <span className="font-semibold text-accent">{farmlandId}</span>
                   </div>
                   <div className="inline-flex items-center gap-1.5 text-text-secondary">
                     <Phone className="size-3.5 text-accent" />
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="text-text-secondary bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none transition-colors w-32 text-sm"
-                    />
+                    <span>{phone}</span>
                   </div>
                 </div>
               </div>
@@ -574,12 +556,9 @@ export function SiteVisitDetailScreen({
               <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
                 Site Visit
               </p>
-              <input
-                type="text"
-                value={scheduledHeader}
-                onChange={(e) => setScheduledHeader(e.target.value)}
-                className="font-bold text-base text-text text-right bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none transition-colors w-44"
-              />
+              <p className="font-bold text-base text-text">
+                {scheduledHeader}
+              </p>
             </div>
           </div>
         </Card>
