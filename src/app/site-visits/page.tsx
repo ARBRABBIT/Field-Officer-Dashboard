@@ -485,7 +485,7 @@ export default function SiteVisitsPage() {
                       <button
                         type="button"
                         onClick={() => handleOpenDetail(item)}
-                        className="glc-focus inline-flex h-7 items-center justify-center rounded-full bg-[#96C9ED] px-3.5 text-[11px] font-medium uppercase tracking-wider text-black transition-all hover:bg-accent hover:text-text-inverse active:scale-95 cursor-pointer whitespace-nowrap"
+                        className="glc-focus inline-flex h-7 items-center justify-center rounded-full bg-[#96C9ED] px-3.5 text-[11px] font-medium text-black transition-all hover:bg-accent hover:text-text-inverse active:scale-95 cursor-pointer whitespace-nowrap"
                       >
                         View Details
                       </button>
