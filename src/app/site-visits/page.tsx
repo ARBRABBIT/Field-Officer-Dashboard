@@ -164,7 +164,6 @@ function GLCLogo() {
 
 export default function SiteVisitsPage() {
   const [selectedVisit, setSelectedVisit] = React.useState<SiteVisitRecord | null>(null);
-  const [activeTab, setActiveTab] = React.useState<"assigned" | "updates">("assigned");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [isNavDropdownOpen, setIsNavDropdownOpen] = React.useState(false);
@@ -226,20 +225,16 @@ export default function SiteVisitsPage() {
   };
 
   const filteredRecords = React.useMemo(() => {
-    let list = siteVisitRecords;
-    if (activeTab === "updates") {
-      list = list.filter((r) => r.status === "In Progress" || r.status === "Completed");
-    }
-    if (!searchQuery.trim()) return list;
+    if (!searchQuery.trim()) return siteVisitRecords;
     const q = searchQuery.toLowerCase();
-    return list.filter(
+    return siteVisitRecords.filter(
       (r) =>
         r.customer.toLowerCase().includes(q) ||
         r.farmlandId.toLowerCase().includes(q) ||
         r.location.toLowerCase().includes(q) ||
         r.status.toLowerCase().includes(q)
     );
-  }, [searchQuery, activeTab]);
+  }, [searchQuery]);
 
   const renderStatusBadge = (status: SiteVisitRecord["status"]) => {
     switch (status) {
@@ -433,58 +428,19 @@ export default function SiteVisitsPage() {
             Site Visits
           </h1>
 
-          {/* Search bar & Filter tabs */}
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Search Input */}
-            <div className="relative w-full sm:w-[360px] lg:w-[412px]">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-text-muted"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by farmland, customer, location..."
-                className="glc-focus h-12 w-full rounded-full border border-transparent bg-surface pl-12 pr-5 text-sm text-text placeholder:text-text-muted/70 shadow-low transition-colors hover:border-border-strong focus:border-accent focus:bg-surface"
-              />
-            </div>
-
-            {/* Segmented Control / Tabs */}
-            <div
-              role="tablist"
-              className="inline-flex h-12 items-center rounded-xl bg-surface-muted/90 p-1 border border-border/40 shadow-xs"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "assigned"}
-                onClick={() => setActiveTab("assigned")}
-                className={`glc-focus rounded-lg px-6 py-2 text-sm font-semibold transition-colors cursor-pointer ${
-                  activeTab === "assigned"
-                    ? "bg-surface text-accent shadow-low"
-                    : "text-text-muted hover:text-text"
-                }`}
-              >
-                Assigned
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "updates"}
-                onClick={() => setActiveTab("updates")}
-                className={`glc-focus inline-flex items-center gap-2 rounded-lg px-6 py-2 text-sm font-semibold transition-colors cursor-pointer ${
-                  activeTab === "updates"
-                    ? "bg-surface text-[#1C5F9D] shadow-low border border-border/40"
-                    : "text-text-muted hover:text-text"
-                }`}
-              >
-                <span>Updates</span>
-                <span className="inline-flex items-center justify-center rounded px-1.5 py-0.2 bg-[#063669]/10 text-[10px] font-bold text-[#1C5F9D]">
-                  14
-                </span>
-              </button>
-            </div>
+          {/* Search bar */}
+          <div className="relative w-full sm:w-[360px] lg:w-[412px]">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-text-muted"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by farmland, customer, location..."
+              className="glc-focus h-12 w-full rounded-full border border-transparent bg-surface pl-12 pr-5 text-sm text-text placeholder:text-text-muted/70 shadow-low transition-colors hover:border-border-strong focus:border-accent focus:bg-surface"
+            />
           </div>
         </div>
 
