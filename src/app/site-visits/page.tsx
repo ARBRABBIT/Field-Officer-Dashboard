@@ -1,5 +1,5 @@
-import { SiteVisitDetailScreen } from "@/components/dashboard/site-visit-detail-screen";
+import { SiteVisitsScreen } from "@/components/dashboard/site-visits-screen";
 
 export default function SiteVisitsPage() {
-  return <SiteVisitDetailScreen />;
+  return <SiteVisitsScreen />;
 }

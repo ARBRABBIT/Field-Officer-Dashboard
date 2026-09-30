@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import {
   AlertTriangle,
@@ -59,7 +60,34 @@ function GLCLogo() {
   );
 }
 
-export function SiteVisitDetailScreen() {
+export interface SiteVisitRecord {
+  id: string;
+  customer: string;
+  farmlandId: string;
+  visitDate: string;
+  land: string;
+  status: "Completed" | "In Progress" | "Scheduled";
+  location: string;
+  phone: string;
+  propertyId: string;
+  buyerFrom: string;
+  checkedIn?: string;
+  duration?: string;
+  visitors?: string;
+  accompaniedBy?: string;
+}
+
+export interface SiteVisitDetailScreenProps {
+  initialRecord?: SiteVisitRecord | null;
+  onBack?: () => void;
+}
+
+export function SiteVisitDetailScreen({
+  initialRecord,
+  onBack,
+}: SiteVisitDetailScreenProps = {}) {
+  const router = useRouter();
+
   // Top nav dropdown state
   const [isNavDropdownOpen, setIsNavDropdownOpen] = React.useState(false);
   const dropdownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -75,22 +103,30 @@ export function SiteVisitDetailScreen() {
     }, 180);
   };
 
-  // Header & Customer details (Retained from visit)
-  const [customerName, setCustomerName] = React.useState("Pooja");
-  const [farmlandId, setFarmlandId] = React.useState("#GLCSOS 088");
-  const [phone, setPhone] = React.useState("+91 9849012345");
-  const [visitStatus, setVisitStatus] = React.useState<"Completed" | "In Progress" | "Scheduled">("Completed");
-  const [scheduledHeader, setScheduledHeader] = React.useState("25th Sep - 10:00 AM");
+  // Header & Customer details (Retained from visit or initialized from record)
+  const [customerName, setCustomerName] = React.useState(initialRecord?.customer || "Pooja");
+  const [farmlandId, setFarmlandId] = React.useState(
+    initialRecord
+      ? initialRecord.farmlandId.startsWith("#")
+        ? initialRecord.farmlandId
+        : `#${initialRecord.farmlandId}`
+      : "#GLCSOS 088"
+  );
+  const [phone, setPhone] = React.useState(initialRecord?.phone || "+91 9849012345");
+  const [visitStatus, setVisitStatus] = React.useState<"Completed" | "In Progress" | "Scheduled">(
+    initialRecord?.status || "Completed"
+  );
+  const [scheduledHeader, setScheduledHeader] = React.useState(initialRecord?.visitDate || "25th Sep - 10:00 AM");
 
   // 1. Visit Details Form state (Retained as requested)
-  const [propertyId, setPropertyId] = React.useState("GLC SOS 07");
-  const [farmlandLocation, setFarmlandLocation] = React.useState("Nunna, Krishna Dist.");
-  const [buyerFrom, setBuyerFrom] = React.useState("Vijayawada, Benz Circle");
-  const [scheduled, setScheduled] = React.useState("25th Sep - 10:00 AM");
-  const [checkedIn, setCheckedIn] = React.useState("2026-09-25T10:12");
-  const [duration, setDuration] = React.useState("1 hr 25 min");
-  const [visitors, setVisitors] = React.useState("Pooja + spouse");
-  const [accompaniedBy, setAccompaniedBy] = React.useState("Ramesh Babu");
+  const [propertyId, setPropertyId] = React.useState(initialRecord?.propertyId || "GLC SOS 07");
+  const [farmlandLocation, setFarmlandLocation] = React.useState(initialRecord?.location || "Nunna, Krishna Dist.");
+  const [buyerFrom, setBuyerFrom] = React.useState(initialRecord?.buyerFrom || "Vijayawada, Benz Circle");
+  const [scheduled, setScheduled] = React.useState(initialRecord?.visitDate || "25th Sep - 10:00 AM");
+  const [checkedIn, setCheckedIn] = React.useState(initialRecord?.checkedIn || "2026-09-25T10:12");
+  const [duration, setDuration] = React.useState(initialRecord?.duration || "1 hr 25 min");
+  const [visitors, setVisitors] = React.useState(initialRecord?.visitors || `${initialRecord?.customer || "Pooja"} + spouse`);
+  const [accompaniedBy, setAccompaniedBy] = React.useState(initialRecord?.accompaniedBy || "Ramesh Babu");
 
   // 2. Feedback Summary Form state (Starts EMPTY for officer entry)
   const [overallRating, setOverallRating] = React.useState<number>(0);
@@ -102,7 +138,7 @@ export function SiteVisitDetailScreen() {
   const [budgetUnit, setBudgetUnit] = React.useState<"Lakh" | "Cr">("Lakh");
 
   // Preferred Plot Size (Acres only)
-  const [plotSize, setPlotSize] = React.useState("");
+  const [plotSize, setPlotSize] = React.useState(initialRecord?.land || "");
 
   // Purchase Timeline: dropdown + custom date calculation
   const [timelineType, setTimelineType] = React.useState<
@@ -384,10 +420,15 @@ export function SiteVisitDetailScreen() {
                     </Link>
 
                     {/* Option 2: Site visits (Active) */}
-                    <Link
-                      href="/site-visits"
+                    <button
+                      type="button"
                       role="menuitem"
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs font-medium bg-accent text-text-inverse font-semibold shadow-low transition-colors mt-1"
+                      onClick={() => {
+                        setIsNavDropdownOpen(false);
+                        if (onBack) onBack();
+                        else router.push("/site-visits");
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs font-medium bg-accent text-text-inverse font-semibold shadow-low transition-colors mt-1 cursor-pointer"
                     >
                       <div className="grid size-7 place-items-center rounded-lg bg-white/20 text-white">
                         <MapPin className="size-4" />
@@ -397,7 +438,7 @@ export function SiteVisitDetailScreen() {
                         <p className="text-[10px] text-white/80">Field inspection logs</p>
                       </div>
                       <span className="size-2 rounded-full bg-white shrink-0" />
-                    </Link>
+                    </button>
                   </div>
                 </div>
               )}
@@ -423,6 +464,33 @@ export function SiteVisitDetailScreen() {
             </div>
           </div>
         </header>
+
+        {/* BREADCRUMB / BACK NAVIGATION BAR */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={onBack ? onBack : () => router.push("/site-visits")}
+            className="glc-focus inline-flex items-center gap-2 rounded-full border border-border/70 bg-surface px-4 py-2 text-xs font-semibold text-text shadow-xs hover:border-accent hover:text-accent hover:bg-surface-hover transition-colors cursor-pointer group"
+          >
+            <ChevronLeft className="size-4 text-text-muted group-hover:text-accent transition-colors" />
+            <span>Back to Site Visits</span>
+          </button>
+
+          <div className="flex items-center gap-2 text-xs text-text-muted">
+            <Link href="/" className="hover:text-accent transition-colors">Assigned Services</Link>
+            <span>/</span>
+            <button
+              type="button"
+              onClick={onBack ? onBack : () => router.push("/site-visits")}
+              className="hover:text-accent transition-colors cursor-pointer"
+            >
+              Site Visits
+            </button>
+            <span>/</span>
+            <span className="font-semibold text-text">{customerName}</span>
+            <span className="text-[11px] text-accent font-medium">({farmlandId})</span>
+          </div>
+        </div>
 
         {/* TOP STATUS BANNER / CUSTOMER SUMMARY CARD */}
         <Card
