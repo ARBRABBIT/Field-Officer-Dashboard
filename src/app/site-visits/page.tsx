@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import {
   Avatar,
-  Badge,
   Card,
 } from "@/components/ui";
 import {
@@ -236,33 +235,6 @@ export default function SiteVisitsPage() {
     );
   }, [searchQuery]);
 
-  const renderStatusBadge = (status: SiteVisitRecord["status"]) => {
-    switch (status) {
-      case "Completed":
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E5F6E6] border border-[#00801F]/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#00801F]">
-            <span className="size-1.5 rounded-full bg-[#00801F]" />
-            Completed
-          </span>
-        );
-      case "In Progress":
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-soft border border-warning/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#9A5500]">
-            <span className="size-1.5 rounded-full bg-[#D97706]" />
-            In Progress
-          </span>
-        );
-      case "Scheduled":
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E9F3FA] border border-[#1C5F9D]/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#1C5F9D]">
-            <span className="size-1.5 rounded-full bg-[#1C5F9D]" />
-            Scheduled
-          </span>
-        );
-      default:
-        return <Badge variant="neutral">{status}</Badge>;
-    }
-  };
 
   // If a visit detail is active, render the detail page
   if (selectedVisit) {
@@ -468,9 +440,6 @@ export default function SiteVisitsPage() {
                     Land
                   </th>
                   <th scope="col" className="px-8 py-4">
-                    Status
-                  </th>
-                  <th scope="col" className="px-8 py-4">
                     Location
                   </th>
                   <th scope="col" className="px-8 py-4 text-center">
@@ -504,11 +473,6 @@ export default function SiteVisitsPage() {
                     {/* Land */}
                     <td className="px-8 py-4 font-semibold text-base text-text">
                       {item.land}
-                    </td>
-
-                    {/* Status Badge */}
-                    <td className="px-8 py-4">
-                      {renderStatusBadge(item.status)}
                     </td>
 
                     {/* Location */}
