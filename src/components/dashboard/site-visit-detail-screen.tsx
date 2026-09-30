@@ -87,7 +87,7 @@ export function SiteVisitDetailScreen() {
   const [farmlandLocation, setFarmlandLocation] = React.useState("Nunna, Krishna Dist.");
   const [buyerFrom, setBuyerFrom] = React.useState("Vijayawada, Benz Circle");
   const [scheduled, setScheduled] = React.useState("25th Sep - 10:00 AM");
-  const [checkedIn, setCheckedIn] = React.useState("25th Sep - 10:12 AM");
+  const [checkedIn, setCheckedIn] = React.useState("2026-09-25T10:12");
   const [duration, setDuration] = React.useState("1 hr 25 min");
   const [visitors, setVisitors] = React.useState("Pooja + spouse");
   const [accompaniedBy, setAccompaniedBy] = React.useState("Ramesh Babu");
@@ -559,10 +559,10 @@ export function SiteVisitDetailScreen() {
 
               {/* Checked In */}
               <FormField label="CHECKED IN">
-                <Input
+                <DateTimePicker
                   value={checkedIn}
-                  onChange={(e) => setCheckedIn(e.target.value)}
-                  className="text-sm text-text"
+                  onChange={(val) => setCheckedIn(val)}
+                  placeholder="Select check-in date & time..."
                 />
               </FormField>
 
