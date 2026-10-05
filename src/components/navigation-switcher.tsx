@@ -41,9 +41,19 @@ export function NavigationSwitcher() {
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       const updateDefaultPos = () => {
-        const x = Math.max(16, window.innerWidth - 320);
-        const y = Math.max(16, window.innerHeight - 76);
-        setPosition((prev) => (prev ? prev : { x, y }));
+        const defaultX = Math.max(16, window.innerWidth - 320);
+        const defaultY = Math.max(16, window.innerHeight - 76);
+        setPosition((prev) => {
+          if (!prev) return { x: defaultX, y: defaultY };
+          const widgetWidth = widgetRef.current?.offsetWidth || 280;
+          const widgetHeight = widgetRef.current?.offsetHeight || 50;
+          const maxX = Math.max(10, window.innerWidth - widgetWidth - 10);
+          const maxY = Math.max(10, window.innerHeight - widgetHeight - 10);
+          return {
+            x: Math.min(Math.max(10, prev.x), maxX),
+            y: Math.min(Math.max(10, prev.y), maxY),
+          };
+        });
       };
       updateDefaultPos();
       window.addEventListener("resize", updateDefaultPos);

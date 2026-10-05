@@ -350,9 +350,9 @@ export function SiteVisitDetailScreen({
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] py-8 px-4 sm:px-6 lg:px-10 flex flex-col items-center">
-      {/* 1440px desktop container */}
-      <div className="w-full max-w-[1360px] flex flex-col gap-8">
+    <div className="min-h-screen bg-[#F9F9F9] py-8 px-4 sm:px-6 lg:px-10 2xl:px-14 3xl:px-16 4xl:px-20 flex flex-col items-center">
+      {/* Responsive desktop container */}
+      <div className="w-full max-w-[1440px] 2xl:max-w-[1780px] 3xl:max-w-[2180px] 4xl:max-w-[2400px] flex flex-col gap-8">
 
         {/* TOP NAVIGATION BAR */}
         <header className="w-full flex items-center justify-between gap-4">

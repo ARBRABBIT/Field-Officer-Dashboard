@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import {
   ArrowLeft,
   Bell,
   Calculator,
-  CheckCircle2,
+  Check,
   ChevronDown,
   ChevronRight,
   ClipboardList,
@@ -15,7 +16,9 @@ import {
   FileText,
   LandPlot,
   MapPin,
+  Plus,
   Receipt,
+  Search,
   Send,
   Sparkles,
   Sprout,
@@ -65,9 +68,31 @@ export interface ServiceEstimationState {
   perFeetRate?: string;
   wireLength?: string;
   wireRate?: string;
+  organicPlan?: "1 Year Plan" | "5-15 Year Plan";
+  organicYears?: string;
+  yieldingCrops?: string[];
   description: string;
   fields: CostField[];
 }
+
+export const availableYieldingCrops = [
+  "Mango",
+  "Guava",
+  "Pomegranate",
+  "Lemon (Citrus)",
+  "Dragon Fruit",
+  "Papaya",
+  "Custard Apple",
+  "Amla (Gooseberry)",
+  "Teakwood",
+  "Sandalwood",
+  "Red Sandalwood",
+  "Malabar Neem",
+  "Mahogany",
+  "Turmeric",
+  "Ginger",
+  "Coconut",
+];
 
 const defaultBorewellFields: CostField[] = [
   { id: "labour", label: "Labour Charges", amount: 15000 },
@@ -154,7 +179,22 @@ export function GenerateEstimationScreen({
   const activeServiceName = availableServices[activeServiceIdx] || availableServices[0] || "Borewell";
   const [confirmedServices, setConfirmedServices] = React.useState<Set<string>>(new Set());
   const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
+  const [redirectingStage, setRedirectingStage] = React.useState<{
+    nextServiceName: string;
+    nextIndex?: number;
+    isWorkOrder?: boolean;
+  } | null>(null);
+  const redirectTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Organic Farming Crop Popover State
+  const [isCropPopoverOpen, setIsCropPopoverOpen] = React.useState(false);
+  const [cropSearch, setCropSearch] = React.useState("");
+
+  React.useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+    };
+  }, []);
 
   // State map by service name
   const [estimations, setEstimations] = React.useState<Record<string, ServiceEstimationState>>({
@@ -179,6 +219,9 @@ export function GenerateEstimationScreen({
     },
     "Organic Farming": {
       landSize: record.land || "5.0 Acres",
+      organicPlan: "1 Year Plan",
+      organicYears: "5",
+      yieldingCrops: ["Mango", "Guava", "Teakwood"],
       description: "Includes soil pH & nutrient testing, organic composting, micro-drip irrigation installation, certified non-GMO seed/sapling plantation, and biological pest control setup.",
       fields: defaultOrganicFarmingFields,
     },
@@ -191,6 +234,9 @@ export function GenerateEstimationScreen({
     perFeetRate: "₹100 / Foot",
     wireLength: "1,200 Meters",
     wireRate: "₹50 / Meter",
+    organicPlan: "1 Year Plan",
+    organicYears: "5",
+    yieldingCrops: ["Mango", "Guava", "Teakwood"],
     description: "",
     fields: defaultBorewellFields,
   };
@@ -427,6 +473,129 @@ export function GenerateEstimationScreen({
     });
   };
 
+  // Update Organic Farming Plan (1 Year Plan vs 5-15 Year Plan)
+  const handleOrganicPlanChange = (plan: "1 Year Plan" | "5-15 Year Plan") => {
+    setEstimations((prev) => {
+      const currentServiceEst = prev[activeServiceName] || {
+        landSize: record.land || "5.0 Acres",
+        organicPlan: "1 Year Plan",
+        organicYears: "5",
+        yieldingCrops: ["Mango", "Guava", "Teakwood"],
+        description: "",
+        fields: defaultOrganicFarmingFields,
+      };
+
+      return {
+        ...prev,
+        [activeServiceName]: {
+          ...currentServiceEst,
+          organicPlan: plan,
+          organicYears: plan === "5-15 Year Plan" ? currentServiceEst.organicYears || "5" : undefined,
+        },
+      };
+    });
+  };
+
+  // Update Organic Farming Years for 5-15 Year Plan
+  const handleOrganicYearsChange = (years: string) => {
+    const cleanYears = years.replace(/[^0-9]/g, "");
+    setEstimations((prev) => {
+      const currentServiceEst = prev[activeServiceName] || {
+        landSize: record.land || "5.0 Acres",
+        organicPlan: "5-15 Year Plan",
+        organicYears: "5",
+        yieldingCrops: ["Mango", "Guava", "Teakwood"],
+        description: "",
+        fields: defaultOrganicFarmingFields,
+      };
+
+      return {
+        ...prev,
+        [activeServiceName]: {
+          ...currentServiceEst,
+          organicYears: cleanYears,
+        },
+      };
+    });
+  };
+
+  // Toggle Yielding Crop (Multi-select)
+  const handleToggleYieldingCrop = (crop: string) => {
+    setEstimations((prev) => {
+      const currentServiceEst = prev[activeServiceName] || {
+        landSize: record.land || "5.0 Acres",
+        organicPlan: "1 Year Plan",
+        organicYears: "5",
+        yieldingCrops: ["Mango", "Guava", "Teakwood"],
+        description: "",
+        fields: defaultOrganicFarmingFields,
+      };
+
+      const existing = currentServiceEst.yieldingCrops || [];
+      const updated = existing.includes(crop)
+        ? existing.filter((c) => c !== crop)
+        : [...existing, crop];
+
+      return {
+        ...prev,
+        [activeServiceName]: {
+          ...currentServiceEst,
+          yieldingCrops: updated,
+        },
+      };
+    });
+  };
+
+  // Remove Yielding Crop
+  const handleRemoveYieldingCrop = (crop: string) => {
+    setEstimations((prev) => {
+      const currentServiceEst = prev[activeServiceName] || {
+        landSize: record.land || "5.0 Acres",
+        organicPlan: "1 Year Plan",
+        organicYears: "5",
+        yieldingCrops: ["Mango", "Guava", "Teakwood"],
+        description: "",
+        fields: defaultOrganicFarmingFields,
+      };
+
+      const existing = currentServiceEst.yieldingCrops || [];
+      return {
+        ...prev,
+        [activeServiceName]: {
+          ...currentServiceEst,
+          yieldingCrops: existing.filter((c) => c !== crop),
+        },
+      };
+    });
+  };
+
+  // Add custom crop
+  const handleAddCustomCrop = (customCrop: string) => {
+    const trimmed = customCrop.trim();
+    if (!trimmed) return;
+    setEstimations((prev) => {
+      const currentServiceEst = prev[activeServiceName] || {
+        landSize: record.land || "5.0 Acres",
+        organicPlan: "1 Year Plan",
+        organicYears: "5",
+        yieldingCrops: ["Mango", "Guava", "Teakwood"],
+        description: "",
+        fields: defaultOrganicFarmingFields,
+      };
+
+      const existing = currentServiceEst.yieldingCrops || [];
+      if (existing.some((c) => c.toLowerCase() === trimmed.toLowerCase())) return prev;
+
+      return {
+        ...prev,
+        [activeServiceName]: {
+          ...currentServiceEst,
+          yieldingCrops: [...existing, trimmed],
+        },
+      };
+    });
+  };
+
   // Automatically calculate total cost by summing all fields
   const calculatedTotal = React.useMemo(() => {
     return currentEst.fields.reduce((sum, item) => {
@@ -443,18 +612,80 @@ export function GenerateEstimationScreen({
   };
 
   const handleConfirmDispatch = () => {
-    setConfirmedServices((prev) => {
-      const next = new Set(prev);
-      next.add(activeServiceName);
-      return next;
-    });
+    const updatedConfirmed = new Set(confirmedServices);
+    updatedConfirmed.add(activeServiceName);
+    setConfirmedServices(updatedConfirmed);
     setIsConfirmModalOpen(false);
-    setIsSuccessModalOpen(true);
+
+    if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+
+    // Advance to next service tab (e.g. Borewell -> Fencing -> Farmhouse -> Organic Farming)
+    const nextIdx = activeServiceIdx + 1;
+    if (nextIdx < availableServices.length) {
+      const nextName = availableServices[nextIdx];
+      setRedirectingStage({
+        nextServiceName: nextName,
+        nextIndex: nextIdx,
+        isWorkOrder: false,
+      });
+
+      redirectTimeoutRef.current = setTimeout(() => {
+        setActiveServiceIdx(nextIdx);
+        setRedirectingStage(null);
+      }, 1800);
+    } else {
+      // Check if any previous service was left unconfirmed
+      const unconfirmedIdx = availableServices.findIndex(
+        (s) => !updatedConfirmed.has(s)
+      );
+      if (unconfirmedIdx !== -1) {
+        const nextName = availableServices[unconfirmedIdx];
+        setRedirectingStage({
+          nextServiceName: nextName,
+          nextIndex: unconfirmedIdx,
+          isWorkOrder: false,
+        });
+
+        redirectTimeoutRef.current = setTimeout(() => {
+          setActiveServiceIdx(unconfirmedIdx);
+          setRedirectingStage(null);
+        }, 1800);
+      } else {
+        // Last service finished, advance to next stage (Active Work Order)
+        setRedirectingStage({
+          nextServiceName: "Work Order",
+          isWorkOrder: true,
+        });
+
+        redirectTimeoutRef.current = setTimeout(() => {
+          setRedirectingStage(null);
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            onBack();
+          }
+        }, 1800);
+      }
+    }
+  };
+
+  const handleImmediateRedirect = () => {
+    if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+    if (!redirectingStage) return;
+
+    if (redirectingStage.isWorkOrder) {
+      setRedirectingStage(null);
+      if (onSuccess) onSuccess();
+      else onBack();
+    } else if (typeof redirectingStage.nextIndex === "number") {
+      setActiveServiceIdx(redirectingStage.nextIndex);
+      setRedirectingStage(null);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] py-8 px-4 sm:px-6 lg:px-10 flex flex-col items-center animate-in fade-in duration-200">
-      <div className="w-full max-w-[1360px] flex flex-col gap-8">
+    <div className="min-h-screen bg-[#F9F9F9] py-8 px-4 sm:px-6 lg:px-10 2xl:px-14 3xl:px-16 4xl:px-20 flex flex-col items-center animate-in fade-in duration-200">
+      <div className="w-full max-w-[1440px] 2xl:max-w-[1780px] 3xl:max-w-[2180px] 4xl:max-w-[2400px] flex flex-col gap-8">
         
         {/* TOP NAVIGATION BAR */}
         <header className="w-full flex items-center justify-between gap-4">
@@ -778,7 +1009,7 @@ export function GenerateEstimationScreen({
             </div>
 
             {/* Row: Land Size & Service Parameters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4">
               <div className="w-full">
                 <label className="block text-xs font-semibold text-text-muted mb-2">
                   Enter Land Size
@@ -851,7 +1082,201 @@ export function GenerateEstimationScreen({
                   </div>
                 </>
               )}
+
+              {activeServiceName === "Organic Farming" && (
+                <>
+                  {/* Organic Farming Plan: 1 Year Plan vs 5-15 Year Plan */}
+                  <div className="w-full">
+                    <label className="block text-xs font-semibold text-text-muted mb-2">
+                      Organic Farming Plan
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={currentEst.organicPlan || "1 Year Plan"}
+                        onChange={(e) =>
+                          handleOrganicPlanChange(
+                            e.target.value as "1 Year Plan" | "5-15 Year Plan"
+                          )
+                        }
+                        className="glc-focus w-full h-12 px-4 pr-10 rounded-2xl bg-surface border border-border/70 text-sm font-semibold text-text appearance-none focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent shadow-xs cursor-pointer"
+                      >
+                        <option value="1 Year Plan">1 Year Plan</option>
+                        <option value="5-15 Year Plan">5-15 Year Plan</option>
+                      </select>
+                      <ChevronDown className="size-4 text-text-muted pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
+                    </div>
+                  </div>
+
+                  {/* If 5-15 Year Plan is selected, show another field to add years */}
+                  {currentEst.organicPlan === "5-15 Year Plan" && (
+                    <div className="w-full animate-in fade-in duration-200">
+                      <label className="block text-xs font-semibold text-text-muted mb-2">
+                        Add Years (5–15 Years)
+                      </label>
+                      <div className="relative flex items-center">
+                        <input
+                          type="number"
+                          min={5}
+                          max={15}
+                          placeholder="e.g. 5, 10, 15"
+                          value={currentEst.organicYears?.replace(/[^0-9]/g, "") || "5"}
+                          onChange={(e) => handleOrganicYearsChange(e.target.value)}
+                          className="glc-focus w-full h-12 px-4 pr-16 rounded-2xl bg-surface border border-border/70 text-sm font-semibold text-text placeholder:text-text-muted/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent shadow-xs"
+                        />
+                        <span className="absolute right-4 text-xs font-semibold text-text-muted pointer-events-none">
+                          Years
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
+
+            {/* Yielding Crops Multi-Select (For Organic Farming) */}
+            {activeServiceName === "Organic Farming" && (
+              <div className="w-full rounded-2xl bg-surface border border-border/70 p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-text">
+                        Select Yielding Crops
+                      </label>
+                      <span className="text-[10px] font-bold text-[#1C5F9D] px-2 py-0.5 rounded-full bg-[#1C5F9D]/10">
+                        Multi-Select ({(currentEst.yieldingCrops || []).length})
+                      </span>
+                    </div>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      Select commercial & yielding tree/fruit varieties to cultivate under this organic plan.
+                    </p>
+                  </div>
+
+                  <PopoverPrimitive.Root open={isCropPopoverOpen} onOpenChange={setIsCropPopoverOpen}>
+                    <PopoverPrimitive.Trigger asChild>
+                      <button
+                        type="button"
+                        className="glc-focus inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1C5F9D] hover:bg-[#164E83] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
+                      >
+                        <Plus className="size-3.5" />
+                        <span>Add / Manage Crops</span>
+                        <ChevronDown className={`size-3.5 transition-transform duration-200 ${isCropPopoverOpen ? "rotate-180" : ""}`} />
+                      </button>
+                    </PopoverPrimitive.Trigger>
+
+                    <PopoverPrimitive.Content
+                      align="end"
+                      sideOffset={8}
+                      className="z-50 w-72 sm:w-80 rounded-2xl border border-border bg-surface p-3 shadow-high animate-in fade-in zoom-in-95 duration-150"
+                    >
+                      <div className="space-y-3">
+                        {/* Search Input */}
+                        <div className="relative">
+                          <Search className="size-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            placeholder="Search or type custom crop..."
+                            value={cropSearch}
+                            onChange={(e) => setCropSearch(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && cropSearch.trim()) {
+                                e.preventDefault();
+                                handleAddCustomCrop(cropSearch);
+                                setCropSearch("");
+                              }
+                            }}
+                            className="w-full h-9 pl-9 pr-3 rounded-lg border border-border bg-surface text-xs text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+                          />
+                        </div>
+
+                        {/* Add custom crop button if typed something not in list */}
+                        {cropSearch.trim() &&
+                          !availableYieldingCrops.some(
+                            (c) => c.toLowerCase() === cropSearch.trim().toLowerCase()
+                          ) &&
+                          !(currentEst.yieldingCrops || []).some(
+                            (c) => c.toLowerCase() === cropSearch.trim().toLowerCase()
+                          ) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleAddCustomCrop(cropSearch);
+                                setCropSearch("");
+                              }}
+                              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-accent bg-accent/10 hover:bg-accent/20 transition-colors cursor-pointer"
+                            >
+                              <Plus className="size-3.5" />
+                              <span>Add &ldquo;{cropSearch.trim()}&rdquo;</span>
+                            </button>
+                          )}
+
+                        {/* Crops List */}
+                        <div className="max-h-56 overflow-y-auto divide-y divide-border/30 pr-1 space-y-1">
+                          {availableYieldingCrops
+                            .filter((c) =>
+                              c.toLowerCase().includes(cropSearch.toLowerCase().trim())
+                            )
+                            .map((crop) => {
+                              const isSelected = (currentEst.yieldingCrops || []).includes(crop);
+                              return (
+                                <button
+                                  key={crop}
+                                  type="button"
+                                  onClick={() => handleToggleYieldingCrop(crop)}
+                                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer text-left ${
+                                    isSelected
+                                      ? "bg-[#EBF5FB] text-[#1C5F9D] font-semibold"
+                                      : "hover:bg-surface-hover text-text"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={`size-4 rounded grid place-items-center border ${
+                                        isSelected
+                                          ? "bg-[#1C5F9D] border-[#1C5F9D] text-white"
+                                          : "border-border-strong bg-white"
+                                      }`}
+                                    >
+                                      {isSelected && <Check className="size-3" />}
+                                    </div>
+                                    <span>{crop}</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </PopoverPrimitive.Content>
+                  </PopoverPrimitive.Root>
+                </div>
+
+                {/* Selected Crop Pills List */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {(currentEst.yieldingCrops || []).length > 0 ? (
+                    (currentEst.yieldingCrops || []).map((crop) => (
+                      <span
+                        key={crop}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EBF5FB] border border-[#BDE0FE] text-xs font-semibold text-[#1C5F9D] shadow-2xs"
+                      >
+                        <Sprout className="size-3.5 text-[#16A34A]" />
+                        <span>{crop}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveYieldingCrop(crop)}
+                          aria-label={`Remove ${crop}`}
+                          className="size-4 rounded-full grid place-items-center hover:bg-[#1C5F9D]/20 text-[#1C5F9D] transition-colors cursor-pointer"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-text-muted italic py-1">
+                      No yielding crops selected yet. Click &ldquo;Add / Manage Crops&rdquo; to choose crops.
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* DETAILED ITEMIZED CHARGES GRID */}
             <div>
@@ -859,7 +1284,7 @@ export function GenerateEstimationScreen({
                 Cost Breakdown Items ({currentEst.fields.length} components)
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 sm:gap-5">
                 {currentEst.fields.map((field) => (
                   <div
                     key={field.id}
@@ -1019,6 +1444,25 @@ export function GenerateEstimationScreen({
                 <span className="font-semibold text-text-muted">Land Size</span>
                 <span className="font-bold text-text">{currentEst.landSize || record.land || "5.0 Acres"}</span>
               </div>
+              {activeServiceName === "Organic Farming" && (
+                <>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-text-muted">Organic Plan</span>
+                    <span className="font-bold text-text">
+                      {currentEst.organicPlan || "1 Year Plan"}
+                      {currentEst.organicPlan === "5-15 Year Plan" ? ` (${currentEst.organicYears || "5"} Years)` : ""}
+                    </span>
+                  </div>
+                  {currentEst.yieldingCrops && currentEst.yieldingCrops.length > 0 && (
+                    <div className="flex items-start justify-between text-xs">
+                      <span className="font-semibold text-text-muted pt-0.5">Yielding Crops</span>
+                      <span className="font-bold text-text text-right max-w-[200px] leading-tight">
+                        {currentEst.yieldingCrops.join(", ")}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
               <div className="pt-2 border-t border-border/60 flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-text-muted">
                   Total Quote Amount
@@ -1051,45 +1495,45 @@ export function GenerateEstimationScreen({
         </div>
       )}
 
-      {/* SUCCESS POPUP MODAL */}
-      {isSuccessModalOpen && (
+      {/* REDIRECTING POPUP MODAL */}
+      {redirectingStage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div
             className="w-full max-w-md bg-surface rounded-[28px] border border-border shadow-high p-6 sm:p-8 flex flex-col items-center text-center gap-5 animate-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
           >
-            <div className="size-16 rounded-full bg-[#E5F6E6] text-[#00801F] grid place-items-center shrink-0">
-              <CheckCircle2 className="size-8 text-[#00801F]" />
+            {/* Animated Icon with subtle pulse ring */}
+            <div className="relative">
+              <div className="size-16 rounded-full bg-[#E5F6E6] text-[#00801F] grid place-items-center shrink-0">
+                <Check className="size-8 text-[#00801F]" />
+              </div>
+              <span className="absolute inset-0 rounded-full bg-[#00801F]/20 animate-ping" />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <h3 className="text-xl font-bold text-text">
                 Estimation Dispatched!
               </h3>
-              <p className="text-xs text-text-muted max-w-xs leading-relaxed">
-                Official quotation of <span className="font-bold text-text">₹{formatINR(calculatedTotal)}</span> for <span className="font-bold text-text">{activeServiceName}</span> has been confirmed and dispatched to <span className="font-bold text-text">{record.customer}</span>.
+              <p className="text-sm text-text-muted leading-relaxed max-w-xs">
+                You are redirecting to <span className="font-bold text-text">{redirectingStage.nextServiceName}</span> (the next stage)...
               </p>
             </div>
 
-            <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            {/* Smooth animated progress bar */}
+            <div className="w-full max-w-xs h-1.5 bg-surface-muted rounded-full overflow-hidden">
+              <div className="h-full bg-[#1C5F9D] rounded-full animate-pulse w-full" />
+            </div>
+
+            <div className="w-full pt-1">
               <button
                 type="button"
-                onClick={() => setIsSuccessModalOpen(false)}
-                className="w-full sm:w-auto h-11 px-6 rounded-full bg-[#EAEFF4] hover:bg-[#DEE5EC] text-text font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                onClick={handleImmediateRedirect}
+                style={{ fontWeight: 600 }}
+                className="w-full h-11 px-6 rounded-full bg-[#1C5F9D] hover:bg-[#164E83] active:scale-[0.99] text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
               >
-                Continue Estimating
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSuccessModalOpen(false);
-                  if (onSuccess) onSuccess();
-                  else onBack();
-                }}
-                className="w-full sm:w-auto h-11 px-6 rounded-full bg-[#1C5F9D] hover:bg-[#164E83] text-white font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer"
-              >
-                Done
+                <span>Proceed to {redirectingStage.nextServiceName}</span>
+                <ChevronRight className="size-4" />
               </button>
             </div>
           </div>

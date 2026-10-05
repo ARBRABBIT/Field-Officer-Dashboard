@@ -25,6 +25,7 @@ import { GenerateEstimationScreen } from "./generate-estimation-screen";
 export interface AssignedServiceDetailScreenProps {
   record: ServiceRecord;
   onBack: () => void;
+  onProceedToWorkOrder?: (record: ServiceRecord) => void;
 }
 
 function GLCLogo() {
@@ -52,6 +53,7 @@ function GLCLogo() {
 export function AssignedServiceDetailScreen({
   record,
   onBack,
+  onProceedToWorkOrder,
 }: AssignedServiceDetailScreenProps) {
   const [activeNav, setActiveNav] = React.useState<"services" | "site-visits">("services");
   const [isNavDropdownOpen, setIsNavDropdownOpen] = React.useState(false);
@@ -102,15 +104,19 @@ export function AssignedServiceDetailScreen({
         onBack={() => setIsGeneratingEstimation(false)}
         onSuccess={() => {
           setIsGeneratingEstimation(false);
-          onBack();
+          if (onProceedToWorkOrder) {
+            onProceedToWorkOrder(record);
+          } else {
+            onBack();
+          }
         }}
       />
     );
   }
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-[#F9F9F9] py-8 px-4 sm:px-6 lg:px-10 flex flex-col items-center justify-between animate-in fade-in duration-200">
-      <div className="w-full max-w-[1360px] h-full flex flex-col gap-6 overflow-hidden">
+    <div className="min-h-screen bg-[#F9F9F9] py-8 px-4 sm:px-6 lg:px-10 2xl:px-14 3xl:px-16 4xl:px-20 flex flex-col items-center animate-in fade-in duration-200">
+      <div className="w-full max-w-[1440px] 2xl:max-w-[1780px] 3xl:max-w-[2180px] 4xl:max-w-[2400px] flex flex-col gap-6">
         
         {/* TOP NAVIGATION BAR */}
         <header className="w-full flex items-center justify-between gap-4 shrink-0">
@@ -282,7 +288,7 @@ export function AssignedServiceDetailScreen({
         </header>
 
         {/* CONTENT SECTION */}
-        <div className="flex flex-col flex-1 min-h-0 gap-5 overflow-hidden pb-1">
+        <div className="flex flex-col gap-5 pb-6">
           
           {/* HEADER: Back Button & Active Service Request Title */}
           <div className="flex items-center gap-3 shrink-0">
@@ -300,11 +306,11 @@ export function AssignedServiceDetailScreen({
           </div>
 
           {/* 2-COLUMN MAIN CONTENT GRID */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch flex-1 min-h-0 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
             {/* LEFT CARD: DETAILS TABLE */}
-            <div className="lg:col-span-6 bg-surface rounded-[28px] p-6 sm:p-7 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] h-full min-h-0 flex flex-col justify-between overflow-y-auto">
-              <div className="divide-y divide-[#F1F5F9] text-sm flex-1 flex flex-col justify-between">
+            <div className="lg:col-span-6 bg-surface rounded-[28px] p-6 sm:p-7 2xl:p-8 3xl:p-10 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] flex flex-col justify-between">
+              <div className="divide-y divide-[#F1F5F9] text-sm 3xl:text-base flex-1 flex flex-col justify-between">
                 
                 {/* Land ID */}
                 <div className="py-2.5 first:pt-0 grid grid-cols-12 gap-4 items-center">
@@ -413,10 +419,10 @@ export function AssignedServiceDetailScreen({
             </div>
 
             {/* RIGHT CARD: SATELLITE MAP & GENERATE ESTIMATION BUTTON */}
-            <div className="lg:col-span-6 flex flex-col justify-between h-full min-h-0 gap-4">
+            <div className="lg:col-span-6 flex flex-col justify-between min-h-[500px] 2xl:min-h-[580px] 3xl:min-h-[660px] 4xl:min-h-[720px] gap-4">
               
               {/* Satellite Map Container */}
-              <div className="flex-1 min-h-0 relative w-full rounded-[28px] overflow-hidden border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.06)] bg-slate-900 group">
+              <div className="flex-1 min-h-[420px] 2xl:min-h-[500px] 3xl:min-h-[580px] 4xl:min-h-[640px] relative w-full rounded-[28px] overflow-hidden border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.06)] bg-slate-900 group">
                 {/* Aerial Imagery with Zoom */}
                 <div
                   className="w-full h-full transition-transform duration-300 ease-out origin-center"

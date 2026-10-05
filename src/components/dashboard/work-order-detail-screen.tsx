@@ -234,8 +234,8 @@ export function WorkOrderDetailScreen({
   const workOrderId = `ID-${record.farmlandId ? record.farmlandId.replace(/\D/g, "") || "2098" : "2098"}`;
 
   return (
-    <div className="min-h-screen h-screen flex flex-col bg-[#F2F4F7] overflow-hidden animate-in fade-in duration-200">
-      <div className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col h-full min-h-0 gap-5">
+    <div className="min-h-screen flex flex-col bg-[#F2F4F7] py-6 px-4 sm:px-6 lg:px-8 2xl:px-12 3xl:px-16 4xl:px-20 animate-in fade-in duration-200">
+      <div className="w-full max-w-[1536px] 2xl:max-w-[1780px] 3xl:max-w-[2180px] 4xl:max-w-[2400px] mx-auto flex flex-col gap-5">
         
         {/* TOP NAVIGATION BAR */}
         <header className="w-full flex items-center justify-between gap-4 shrink-0">
@@ -407,7 +407,7 @@ export function WorkOrderDetailScreen({
         </header>
 
         {/* WORK ORDER CONTENT SECTION */}
-        <div className="flex flex-col flex-1 min-h-0 gap-4 overflow-hidden pb-1">
+        <div className="flex flex-col gap-5 pb-6">
           {/* WORK ORDER HEADER: Back Button & Active Work Order Title */}
           <div className="flex items-center gap-3 shrink-0">
             <button
@@ -458,11 +458,11 @@ export function WorkOrderDetailScreen({
           </div>
 
           {/* 3-COLUMN CARDS GRID */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch flex-1 min-h-0 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
             {/* CARD 1: PROJECT ROADMAP (Left 3 cols) */}
-            <div className="lg:col-span-3 bg-surface rounded-[28px] p-6 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] flex flex-col justify-between h-full min-h-0 overflow-hidden">
-              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="lg:col-span-3 bg-surface rounded-[28px] p-6 2xl:p-7 3xl:p-8 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] flex flex-col justify-between min-h-[520px] 3xl:min-h-[640px] 4xl:min-h-[700px]">
+              <div className="flex flex-col flex-1">
                 <h2 className="text-lg font-bold text-text mb-5 shrink-0">
                   Project Roadmap
                 </h2>
@@ -541,7 +541,7 @@ export function WorkOrderDetailScreen({
             </div>
 
             {/* CARD 2: UPLOAD PROGRESS IMAGES (Middle 5 cols) */}
-            <div className="lg:col-span-5 bg-surface rounded-[28px] p-6 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] flex flex-col justify-between h-full min-h-0 overflow-hidden">
+            <div className="lg:col-span-5 bg-surface rounded-[28px] p-6 2xl:p-7 3xl:p-8 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] flex flex-col justify-between min-h-[520px] 3xl:min-h-[640px] 4xl:min-h-[700px]">
               <div className="flex flex-col flex-1 min-h-0">
                 <h2 className="text-lg font-bold text-text shrink-0">
                   Upload Progress Images – {phase}
@@ -636,7 +636,7 @@ export function WorkOrderDetailScreen({
             </div>
 
             {/* CARD 3: DAILY PROGRESS UPDATE (Right 4 cols) */}
-            <div className="lg:col-span-4 bg-surface rounded-[28px] p-6 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] flex flex-col justify-between h-full min-h-0 overflow-hidden">
+            <div className="lg:col-span-4 bg-surface rounded-[28px] p-6 2xl:p-7 3xl:p-8 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] flex flex-col justify-between min-h-[520px] 3xl:min-h-[640px] 4xl:min-h-[700px]">
               <div className="space-y-3.5 flex-1 min-h-0 overflow-y-auto pr-0.5">
                 <div>
                   <h2 className="text-lg font-bold text-text">
