@@ -37,6 +37,9 @@ export interface FarmlandServiceItem {
   estimationQuote: string;
   lastUpdate: string;
   land?: string;
+  subscribedPlan?: string;
+  yieldingCrop?: string;
+  customDate?: string;
 }
 
 export interface ServiceRecord {
@@ -48,6 +51,9 @@ export interface ServiceRecord {
   farmlandId: string;
   location: string;
   estimationQuote: string;
+  subscribedPlan?: string;
+  yieldingCrop?: string;
+  customDate?: string;
   services?: FarmlandServiceItem[];
 }
 
@@ -61,6 +67,9 @@ const assignedRecords: ServiceRecord[] = [
     farmlandId: "GLCSOS 01",
     location: "Hyderabad",
     estimationQuote: "₹1,45,000",
+    subscribedPlan: "5–15 Year Plan (5 Years)",
+    yieldingCrop: "Mango",
+    customDate: "Oct 24, 2031",
     services: [
       {
         serviceName: "Borewell",
@@ -79,6 +88,15 @@ const assignedRecords: ServiceRecord[] = [
         estimationQuote: "₹3,80,000",
         lastUpdate: "Oct 18, 2026",
         land: "5.0 Acres",
+      },
+      {
+        serviceName: "Organic Farming",
+        estimationQuote: "₹85,000",
+        lastUpdate: "Oct 25, 2026",
+        land: "5.0 Acres",
+        subscribedPlan: "5–15 Year Plan (5 Years)",
+        yieldingCrop: "Mango",
+        customDate: "Oct 24, 2031",
       },
     ],
   },
@@ -244,6 +262,9 @@ const updateRecords: ServiceRecord[] = [
     farmlandId: "GLCSOS 01",
     location: "Hyderabad",
     estimationQuote: "₹1,45,000",
+    subscribedPlan: "5–15 Year Plan (5 Years)",
+    yieldingCrop: "Mango",
+    customDate: "Oct 24, 2031",
     services: [
       {
         serviceName: "Borewell",
@@ -262,6 +283,15 @@ const updateRecords: ServiceRecord[] = [
         estimationQuote: "₹3,80,000",
         lastUpdate: "Oct 18, 2026",
         land: "5.0 Acres",
+      },
+      {
+        serviceName: "Organic Farming",
+        estimationQuote: "₹85,000",
+        lastUpdate: "Oct 25, 2026",
+        land: "5.0 Acres",
+        subscribedPlan: "5–15 Year Plan (5 Years)",
+        yieldingCrop: "Mango",
+        customDate: "Oct 24, 2031",
       },
     ],
   },

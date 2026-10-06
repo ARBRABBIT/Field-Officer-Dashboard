@@ -27,6 +27,9 @@ export interface WorkOrderService {
   commencementDate?: string;
   estimatedCompletion?: string;
   currentPhase?: string;
+  subscribedPlan?: string;
+  yieldingCrop?: string;
+  customDate?: string;
   milestones?: {
     name: string;
     status: "In Progress" | "Completed" | "Pending";
@@ -42,7 +45,10 @@ export interface WorkOrderRecord {
   farmlandId: string;
   location: string;
   estimationQuote: string;
-  services?: WorkOrderService[];
+  subscribedPlan?: string;
+  yieldingCrop?: string;
+  customDate?: string;
+  services?: (WorkOrderService | any)[];
 }
 
 interface WorkOrderDetailScreenProps {
@@ -131,8 +137,11 @@ const defaultServices: WorkOrderService[] = [
     estimationQuote: "₹85,000",
     lastUpdate: "Oct 25, 2026",
     commencementDate: "Aug 10, 2026",
-    estimatedCompletion: "Nov 15, 2026",
+    estimatedCompletion: "Oct 24, 2031",
     currentPhase: "Drip Irrigation Setup",
+    subscribedPlan: "5–15 Year Plan (5 Years)",
+    yieldingCrop: "Mango",
+    customDate: "Oct 24, 2031",
     milestones: [
       { name: "Soil Testing & Land Preparation", status: "Completed" },
       { name: "Organic Manure & Bed Preparation", status: "Completed" },
@@ -167,10 +176,44 @@ export function WorkOrderDetailScreen({
     }, 180);
   };
 
-  const servicesList =
-    record.services && record.services.length > 0
-      ? record.services
-      : defaultServices;
+  const servicesList: WorkOrderService[] = React.useMemo(() => {
+    let list: WorkOrderService[] = [];
+    if (record.services && record.services.length > 0) {
+      list = record.services.map((s: any) => {
+        const matched = defaultServices.find(
+          (d) => d.serviceName.toLowerCase() === s.serviceName?.toLowerCase()
+        );
+        return {
+          ...matched,
+          ...s,
+          serviceName: s.serviceName || matched?.serviceName || "Service",
+          estimationQuote: s.estimationQuote || matched?.estimationQuote || "₹0",
+          lastUpdate: s.lastUpdate || matched?.lastUpdate || "Recent",
+          commencementDate: s.commencementDate || matched?.commencementDate || "Aug 10, 2026",
+          estimatedCompletion: s.estimatedCompletion || matched?.estimatedCompletion || "Nov 15, 2026",
+          milestones: s.milestones || matched?.milestones || defaultMilestones,
+          currentPhase: s.currentPhase || matched?.currentPhase || "In Progress",
+          subscribedPlan: s.subscribedPlan || matched?.subscribedPlan || (s.serviceName?.toLowerCase().includes("organic") ? "5–15 Year Plan (5 Years)" : undefined),
+          yieldingCrop: s.yieldingCrop || matched?.yieldingCrop || (s.serviceName?.toLowerCase().includes("organic") ? "Mango" : undefined),
+          customDate: s.customDate || matched?.customDate || (s.serviceName?.toLowerCase().includes("organic") ? "Oct 24, 2031" : undefined),
+        };
+      });
+    } else {
+      list = defaultServices.map((s) => ({ ...s }));
+    }
+
+    // Always ensure Organic Farming is included in the services list
+    if (!list.some((s) => s.serviceName.toLowerCase().includes("organic"))) {
+      const defaultOrganic = defaultServices.find((d) =>
+        d.serviceName.toLowerCase().includes("organic")
+      );
+      if (defaultOrganic) {
+        list.push({ ...defaultOrganic });
+      }
+    }
+
+    return list;
+  }, [record.services]);
 
   // Active service pill index
   const [activeServiceIdx, setActiveServiceIdx] = React.useState(() => {
@@ -418,13 +461,15 @@ export function WorkOrderDetailScreen({
             >
               <ArrowLeft className="size-5 text-text" />
             </button>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text">
-              Active Work Order: {record.customer} – {activeService.serviceName} #{workOrderId}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text">
+                Active Work Order: {record.customer} – {activeService.serviceName} #{workOrderId}
+              </h1>
+            </div>
           </div>
 
           {/* SERVICE PILLS NAVIGATION */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
             {servicesList.map((srv, idx) => {
               const isActive = activeServiceIdx === idx;
               const isCompleted = srv.milestones?.every((m) => m.status === "Completed") || srv.currentPhase === "Completed";
@@ -436,18 +481,22 @@ export function WorkOrderDetailScreen({
                     setActiveServiceIdx(idx);
                     if (srv.currentPhase) setPhase(srv.currentPhase);
                   }}
-                  className={`glc-focus rounded-full px-5 py-2 text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+                  className={`glc-focus rounded-full px-5 py-2.5 text-sm font-semibold transition-all cursor-pointer flex items-center gap-2.5 border ${
                     isActive
-                      ? "bg-[#1C5F9D] text-white shadow-xs"
-                      : "bg-[#F1F3F5] text-text hover:bg-[#E5E8EB]"
+                      ? "bg-[#1C5F9D] text-white border-[#1C5F9D] shadow-xs"
+                      : "bg-surface text-text border-border/80 shadow-2xs hover:border-[#1C5F9D]/50 hover:bg-[#F0F7FD] hover:text-[#1C5F9D] hover:shadow-xs active:scale-[0.98]"
                   }`}
                 >
                   {isCompleted ? (
-                    <span className="size-4.5 rounded-full bg-[#86EFAC] text-[#15803D] flex items-center justify-center text-[10px] font-bold shrink-0">
+                    <span className={`size-4.5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                      isActive ? "bg-white/25 text-white" : "bg-[#86EFAC] text-[#15803D]"
+                    }`}>
                       ✓
                     </span>
                   ) : (
-                    <span className="size-4.5 rounded-full bg-[#FFA8A8] text-[#B91C1C] flex items-center justify-center text-[10px] font-extrabold shrink-0">
+                    <span className={`size-4.5 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 ${
+                      isActive ? "bg-white/25 text-white" : "bg-[#FFA8A8] text-[#B91C1C]"
+                    }`}>
                       !
                     </span>
                   )}
@@ -463,9 +512,54 @@ export function WorkOrderDetailScreen({
             {/* CARD 1: PROJECT ROADMAP (Left 3 cols) */}
             <div className="lg:col-span-3 bg-surface rounded-[28px] p-6 2xl:p-7 3xl:p-8 border border-border/50 shadow-[0px_10px_30px_rgba(0,105,107,0.04)] flex flex-col justify-between min-h-[520px] 3xl:min-h-[640px] 4xl:min-h-[700px]">
               <div className="flex flex-col flex-1">
-                <h2 className="text-lg font-bold text-text mb-5 shrink-0">
-                  Project Roadmap
-                </h2>
+                <div className="flex items-center justify-between mb-4 shrink-0">
+                  <h2 className="text-lg font-bold text-text">
+                    Project Roadmap
+                  </h2>
+                  {activeService.serviceName.toLowerCase().includes("organic") && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      Subscribed
+                    </span>
+                  )}
+                </div>
+
+                {/* Subscribed Plan & Custom Date Banner for Organic Farming */}
+                {activeService.serviceName.toLowerCase().includes("organic") && (
+                  <div className="mb-4 p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 to-[#F0F7FD] border border-emerald-200/80 shadow-2xs">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                        <Sprout className="size-3.5 text-emerald-600" />
+                        Subscribed Plan
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+                        Active
+                      </span>
+                    </div>
+                    <p className="text-sm font-extrabold text-text">
+                      {activeService.subscribedPlan || "5–15 Year Plan (5 Years)"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2 border-t border-emerald-200/50 text-xs">
+                      <div>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted block">
+                          Yielding Crop
+                        </span>
+                        <span className="font-bold text-[#1C5F9D] flex items-center gap-1 mt-0.5">
+                          <span>🥭</span>
+                          <span>{activeService.yieldingCrop || "Mango"}</span>
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted block">
+                          Custom Date
+                        </span>
+                        <span className="font-bold text-[#1C5F9D] flex items-center justify-end gap-1 mt-0.5">
+                          <Calendar className="size-3 text-[#1C5F9D]" />
+                          <span>{activeService.customDate || "Oct 24, 2031"}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Vertical Milestone Stepper (Scrollable inside card) */}
                 <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-1">
@@ -531,10 +625,12 @@ export function WorkOrderDetailScreen({
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                    Estimated Completion
+                    {activeService.serviceName.toLowerCase().includes("organic")
+                      ? "Custom Date (Target)"
+                      : "Estimated Completion"}
                   </p>
-                  <p className="text-sm font-bold text-text mt-1">
-                    {activeService.estimatedCompletion || "Nov 10, 2026"}
+                  <p className={`text-sm font-bold mt-1 ${activeService.serviceName.toLowerCase().includes("organic") ? "text-[#1C5F9D]" : "text-text"}`}>
+                    {activeService.customDate || activeService.estimatedCompletion || "Nov 10, 2026"}
                   </p>
                 </div>
               </div>
@@ -642,9 +738,17 @@ export function WorkOrderDetailScreen({
                   <h2 className="text-lg font-bold text-text">
                     Daily Progress Update
                   </h2>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted mt-0.5">
-                    Client Notification
-                  </p>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                      Client Notification
+                    </p>
+                    {activeService.serviceName.toLowerCase().includes("organic") && activeService.subscribedPlan && (
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-flex items-center gap-1">
+                        <Sprout className="size-3 text-emerald-600" />
+                        <span>{activeService.subscribedPlan}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Form Controls */}

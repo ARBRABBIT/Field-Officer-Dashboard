@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import {
   ArrowLeft,
   Bell,
   Calculator,
+  Calendar,
   Check,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ClipboardList,
   DollarSign,
@@ -22,8 +23,10 @@ import {
   Send,
   Sparkles,
   Sprout,
+  Trees,
   X,
 } from "lucide-react";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Avatar } from "@/components/ui";
 import { ServiceRecord } from "./assigned-services-screen";
 
@@ -70,29 +73,560 @@ export interface ServiceEstimationState {
   wireRate?: string;
   organicPlan?: "1 Year Plan" | "5-15 Year Plan";
   organicYears?: string;
+  organicCustomDate?: string;
   yieldingCrops?: string[];
   description: string;
   fields: CostField[];
 }
 
-export const availableYieldingCrops = [
-  "Mango",
-  "Guava",
-  "Pomegranate",
-  "Lemon (Citrus)",
-  "Dragon Fruit",
-  "Papaya",
-  "Custard Apple",
-  "Amla (Gooseberry)",
-  "Teakwood",
-  "Sandalwood",
-  "Red Sandalwood",
-  "Malabar Neem",
-  "Mahogany",
-  "Turmeric",
-  "Ginger",
-  "Coconut",
+export interface YieldingCropInfo {
+  name: string;
+  category: "Fruit Crop" | "Timber & Agroforestry" | "Intercrop & Spice";
+  icon: string;
+  timeline: string;
+  badge: string;
+}
+
+export const detailedYieldingCrops: YieldingCropInfo[] = [
+  { name: "Mango", category: "Fruit Crop", icon: "🥭", timeline: "Yield in 3-4 yrs", badge: "High Yield" },
+  { name: "Guava", category: "Fruit Crop", icon: "🍐", timeline: "Yield in 2-3 yrs", badge: "Fast Growth" },
+  { name: "Pomegranate", category: "Fruit Crop", icon: "🍎", timeline: "Yield in 2.5-3 yrs", badge: "Commercial" },
+  { name: "Lemon (Citrus)", category: "Fruit Crop", icon: "🍋", timeline: "Yield in 2 yrs", badge: "Year-Round" },
+  { name: "Dragon Fruit", category: "Fruit Crop", icon: "🐉", timeline: "Yield in 1.5 yrs", badge: "High Value" },
+  { name: "Papaya", category: "Fruit Crop", icon: "🍈", timeline: "Yield in 9-12 mos", badge: "Cash Crop" },
+  { name: "Custard Apple", category: "Fruit Crop", icon: "🍈", timeline: "Yield in 3 yrs", badge: "Drought Hardy" },
+  { name: "Amla (Gooseberry)", category: "Fruit Crop", icon: "🫒", timeline: "Yield in 3-4 yrs", badge: "Low Water" },
+  { name: "Coconut", category: "Fruit Crop", icon: "🥥", timeline: "Yield in 5-6 yrs", badge: "Perennial" },
+  { name: "Teakwood", category: "Timber & Agroforestry", icon: "🪵", timeline: "Harvest 12-15 yrs", badge: "High Value" },
+  { name: "Sandalwood", category: "Timber & Agroforestry", icon: "🌳", timeline: "Harvest 15 yrs", badge: "Precious" },
+  { name: "Red Sandalwood", category: "Timber & Agroforestry", icon: "🪵", timeline: "Harvest 15 yrs", badge: "Export Grade" },
+  { name: "Malabar Neem", category: "Timber & Agroforestry", icon: "🌿", timeline: "Harvest 6-8 yrs", badge: "Fast Timber" },
+  { name: "Mahogany", category: "Timber & Agroforestry", icon: "🌲", timeline: "Harvest 12-15 yrs", badge: "Hardwood" },
+  { name: "Turmeric", category: "Intercrop & Spice", icon: "🫚", timeline: "Harvest 9 mos", badge: "Organic Spice" },
+  { name: "Ginger", category: "Intercrop & Spice", icon: "🫚", timeline: "Harvest 8-9 mos", badge: "Intercrop" },
 ];
+
+export const availableYieldingCrops = detailedYieldingCrops.map((c) => c.name);
+
+function OrganicPlanDropdownUI({
+  value,
+  onChange,
+}: {
+  value: "1 Year Plan" | "5-15 Year Plan";
+  onChange: (val: "1 Year Plan" | "5-15 Year Plan") => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+
+  const plans = [
+    {
+      id: "1 Year Plan" as const,
+      title: "1 Year Plan",
+      subtitle: "Annual organic soil testing, bio-fertilizers & routine crop care",
+      badge: "Annual Package",
+      icon: <Sprout className="size-4 text-emerald-600" />,
+    },
+    {
+      id: "5-15 Year Plan" as const,
+      title: "5-15 Year Plan",
+      subtitle: "Multi-year commercial orchard setup & high-value timber agroforestry",
+      badge: "Commercial / Long-Term",
+      icon: <Trees className="size-4 text-[#1C5F9D]" />,
+    },
+  ];
+
+  const currentPlan = plans.find((p) => p.id === value) || plans[0];
+
+  return (
+    <div className="w-full">
+      <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+        <PopoverPrimitive.Trigger asChild>
+          <button
+            type="button"
+            className="glc-focus flex w-full h-12 items-center justify-between gap-3 px-4 rounded-2xl bg-surface border border-border/70 text-sm font-semibold text-text shadow-xs hover:border-border-strong cursor-pointer transition-[border-color,box-shadow]"
+          >
+            <div className="flex items-center gap-2.5 truncate">
+              <span className="grid size-7 place-items-center rounded-lg bg-[#F0F7FD] shrink-0">
+                {currentPlan.icon}
+              </span>
+              <span className="font-bold text-text truncate">{currentPlan.title}</span>
+              <span className="text-[10px] font-bold text-[#1C5F9D] px-2 py-0.5 rounded-full bg-[#1C5F9D]/10 shrink-0">
+                {currentPlan.badge}
+              </span>
+            </div>
+            <ChevronDown
+              className={`size-4 text-text-muted transition-transform duration-200 shrink-0 ${
+                open ? "rotate-180 text-accent" : ""
+              }`}
+            />
+          </button>
+        </PopoverPrimitive.Trigger>
+
+        <PopoverPrimitive.Portal>
+          <PopoverPrimitive.Content
+            sideOffset={6}
+            align="start"
+            className="z-50 w-[360px] max-w-[90vw] rounded-2xl border border-border/80 bg-surface p-2 text-text shadow-high outline-none animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-150"
+          >
+            <div className="space-y-1">
+              <p className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                Select Organic Farming Plan
+              </p>
+              {plans.map((p) => {
+                const isSelected = p.id === value;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(p.id);
+                      setOpen(false);
+                    }}
+                    className={`w-full flex items-start justify-between gap-3 p-3 rounded-xl text-left transition-colors cursor-pointer ${
+                      isSelected
+                        ? "bg-[#1C5F9D]/10 border border-[#1C5F9D]/30 text-text"
+                        : "hover:bg-surface-hover text-text border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span className="grid size-7 place-items-center rounded-lg bg-surface shrink-0 shadow-2xs mt-0.5">
+                        {p.icon}
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-text">{p.title}</span>
+                          <span className="text-[10px] font-bold text-[#1C5F9D] px-2 py-0.5 rounded-full bg-white border border-[#1C5F9D]/20">
+                            {p.badge}
+                          </span>
+                        </div>
+                        <p className="text-xs text-text-muted mt-0.5 leading-snug">
+                          {p.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <Check className="size-4.5 text-[#1C5F9D] shrink-0 mt-1" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </PopoverPrimitive.Content>
+        </PopoverPrimitive.Portal>
+      </PopoverPrimitive.Root>
+    </div>
+  );
+}
+
+function OrganicCustomDatePicker({
+  value,
+  onChange,
+}: {
+  value: string; // YYYY-MM-DD
+  onChange: (val: string, calculatedYears?: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+
+  // Parse ISO date
+  const parsedDate = React.useMemo(() => {
+    if (!value) return new Date(2031, 9, 24);
+    const parts = value.split("-").map((p) => parseInt(p, 10));
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? new Date(2031, 9, 24) : d;
+  }, [value]);
+
+  const [viewYear, setViewYear] = React.useState(parsedDate.getFullYear());
+  const [viewMonth, setViewMonth] = React.useState(parsedDate.getMonth());
+
+  // Keep view in sync when opening
+  React.useEffect(() => {
+    if (open) {
+      setViewYear(parsedDate.getFullYear());
+      setViewMonth(parsedDate.getMonth());
+    }
+  }, [open, parsedDate]);
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const shortMonths = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
+  const availableYears = [
+    2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040, 2041
+  ];
+
+  const handlePrevMonth = () => {
+    if (viewMonth === 0) {
+      if (viewYear > 2027) {
+        setViewYear(viewYear - 1);
+        setViewMonth(11);
+      }
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (viewMonth === 11) {
+      if (viewYear < 2041) {
+        setViewYear(viewYear + 1);
+        setViewMonth(0);
+      }
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+
+  // Calendar cells
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay();
+  const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
+
+  const cells: { dateStr: string; day: number; isCurrentMonth: boolean }[] = [];
+
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    const day = prevMonthDays - i;
+    const m = viewMonth === 0 ? 12 : viewMonth;
+    const y = viewMonth === 0 ? viewYear - 1 : viewYear;
+    cells.push({
+      dateStr: `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+      day,
+      isCurrentMonth: false,
+    });
+  }
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    cells.push({
+      dateStr: `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`,
+      day: i,
+      isCurrentMonth: true,
+    });
+  }
+
+  const remaining = 35 - cells.length;
+  for (let i = 1; i <= Math.max(0, remaining); i++) {
+    const m = viewMonth === 11 ? 1 : viewMonth + 2;
+    const y = viewMonth === 11 ? viewYear + 1 : viewYear;
+    cells.push({
+      dateStr: `${y}-${String(m).padStart(2, "0")}-${String(i).padStart(2, "0")}`,
+      day: i,
+      isCurrentMonth: false,
+    });
+  }
+
+  const calculatedYears = calculateYearsFromDate(value);
+  const formattedDisplay = `${parsedDate.getDate()} ${shortMonths[parsedDate.getMonth()]} ${parsedDate.getFullYear()}`;
+
+  const handleSelectDay = (dateStr: string) => {
+    const years = calculateYearsFromDate(dateStr);
+    onChange(dateStr, years);
+    setOpen(false);
+  };
+
+  return (
+    <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+      <PopoverPrimitive.Trigger asChild>
+        <button
+          type="button"
+          className={`glc-focus flex w-full h-12 items-center justify-between gap-3 px-4 rounded-2xl bg-surface border border-border/70 text-sm font-semibold text-text shadow-xs hover:border-border-strong cursor-pointer transition-[border-color,box-shadow] ${
+            open ? "border-accent ring-2 ring-accent/20" : ""
+          }`}
+        >
+          <div className="flex items-center gap-2.5 truncate">
+            <span className="grid size-7 place-items-center rounded-lg bg-[#1C5F9D]/10 text-[#1C5F9D] shrink-0">
+              <Calendar className="size-4 text-[#1C5F9D]" />
+            </span>
+            <span className="font-bold text-text truncate">
+              {formattedDisplay}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] font-bold text-[#1C5F9D] px-2.5 py-0.5 rounded-full bg-[#1C5F9D]/10 border border-[#1C5F9D]/20">
+              {calculatedYears} {calculatedYears === "1" ? "Year" : "Years"} Plan
+            </span>
+            <ChevronDown
+              className={`size-4 text-text-muted transition-transform duration-200 ${
+                open ? "rotate-180 text-accent" : ""
+              }`}
+            />
+          </div>
+        </button>
+      </PopoverPrimitive.Trigger>
+
+      <PopoverPrimitive.Portal>
+        <PopoverPrimitive.Content
+          sideOffset={6}
+          align="start"
+          className="z-50 w-[340px] max-w-[92vw] rounded-2xl border border-border/80 bg-surface p-4 text-text shadow-high outline-none animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-150"
+        >
+          {/* Header with Month / Year Dropdowns & Navigation */}
+          <div className="flex items-center justify-between gap-2 pb-3 border-b border-border/60">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              disabled={viewYear === 2027 && viewMonth === 0}
+              className="grid size-8 place-items-center rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              {/* Month Selector */}
+              <div className="relative">
+                <select
+                  value={viewMonth}
+                  onChange={(e) => setViewMonth(parseInt(e.target.value, 10))}
+                  className="appearance-none bg-surface-muted hover:bg-surface-hover text-xs font-bold text-text pl-2.5 pr-6 py-1.5 rounded-lg border border-border/60 focus:outline-none focus:border-accent cursor-pointer"
+                >
+                  {months.map((m, idx) => (
+                    <option key={m} value={idx}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="size-3 text-text-muted pointer-events-none absolute right-2 top-1/2 -translate-y-1/2" />
+              </div>
+
+              {/* Year Selector */}
+              <div className="relative">
+                <select
+                  value={viewYear}
+                  onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
+                  className="appearance-none bg-surface-muted hover:bg-surface-hover text-xs font-bold text-text pl-2.5 pr-6 py-1.5 rounded-lg border border-border/60 focus:outline-none focus:border-accent cursor-pointer"
+                >
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr} ({yr - 2026}Y)
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="size-3 text-text-muted pointer-events-none absolute right-2 top-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              disabled={viewYear === 2041 && viewMonth === 11}
+              className="grid size-8 place-items-center rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
+
+          {/* Weekday Labels */}
+          <div className="grid grid-cols-7 gap-1 text-center py-2">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((wd) => (
+              <span key={wd} className="text-[11px] font-semibold text-text-muted select-none">
+                {wd}
+              </span>
+            ))}
+          </div>
+
+          {/* Calendar Days Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((cell, idx) => {
+              const isSelected = cell.dateStr === value;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelectDay(cell.dateStr)}
+                  className={`size-9 rounded-xl text-xs font-medium grid place-items-center transition-all select-none cursor-pointer ${
+                    isSelected
+                      ? "bg-[#1C5F9D] text-white font-bold shadow-xs hover:bg-[#1C5F9D]/90"
+                      : cell.isCurrentMonth
+                      ? "text-text hover:bg-surface-hover hover:text-accent font-semibold"
+                      : "text-text-muted/40 hover:bg-surface-hover/50"
+                  }`}
+                >
+                  {cell.day}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Footer with calculated plan information */}
+          <div className="mt-3 pt-2.5 border-t border-border/50 flex items-center justify-between text-xs">
+            <span className="text-text-muted">Target Duration:</span>
+            <span className="font-bold text-[#1C5F9D]">
+              {calculatedYears} {calculatedYears === "1" ? "Year" : "Years"} Cultivation Plan
+            </span>
+          </div>
+        </PopoverPrimitive.Content>
+      </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
+  );
+}
+
+function YieldingCropDropdownUI({
+  value,
+  onChange,
+  size = "md",
+}: {
+  value: string;
+  onChange: (crop: string) => void;
+  size?: "sm" | "md";
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [selectedCategory, setSelectedCategory] = React.useState<string>("All");
+
+  const currentCropInfo =
+    detailedYieldingCrops.find((c) => c.name.toLowerCase() === value?.toLowerCase()) ||
+    detailedYieldingCrops[0];
+
+  const filteredCrops = React.useMemo(() => {
+    return detailedYieldingCrops.filter((crop) => {
+      const matchesSearch =
+        crop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        crop.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        selectedCategory === "All" ||
+        (selectedCategory === "Fruit Crops" && crop.category === "Fruit Crop") ||
+        (selectedCategory === "Timber" && crop.category === "Timber & Agroforestry") ||
+        (selectedCategory === "Spices" && crop.category === "Intercrop & Spice");
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, selectedCategory]);
+
+  return (
+    <div className="w-full">
+      <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+        <PopoverPrimitive.Trigger asChild>
+          <button
+            type="button"
+            className={`glc-focus flex w-full items-center justify-between gap-3 text-left bg-surface border border-border/70 font-semibold text-text shadow-xs hover:border-border-strong cursor-pointer transition-[border-color,box-shadow] ${
+              size === "md"
+                ? "h-12 px-4 rounded-2xl text-sm"
+                : "h-11 px-3.5 rounded-xl text-sm bg-[#F8FAFC] border-border/60"
+            } ${open ? "border-accent ring-2 ring-accent/20" : ""}`}
+          >
+            <div className="flex items-center gap-2.5 truncate">
+              <span className="text-base shrink-0">{currentCropInfo.icon}</span>
+              <span className="font-bold text-text truncate">
+                {currentCropInfo.name}
+              </span>
+              <span className="text-[10px] font-bold text-[#1C5F9D] px-2 py-0.5 rounded-full bg-[#1C5F9D]/10 shrink-0">
+                {currentCropInfo.badge}
+              </span>
+            </div>
+            <ChevronDown
+              className={`size-4 text-text-muted transition-transform duration-200 shrink-0 ${
+                open ? "rotate-180 text-accent" : ""
+              }`}
+            />
+          </button>
+        </PopoverPrimitive.Trigger>
+
+        <PopoverPrimitive.Portal>
+          <PopoverPrimitive.Content
+            sideOffset={6}
+            align="start"
+            className="z-50 w-[380px] max-w-[92vw] rounded-2xl border border-border/80 bg-surface p-3 text-text shadow-high outline-none animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-150"
+          >
+            {/* Search Input */}
+            <div className="relative mb-2.5">
+              <Search className="size-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search crop variety..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-9 pl-9 pr-8 text-xs font-semibold rounded-xl bg-surface-muted border border-border/50 text-text placeholder:text-text-muted/60 focus:outline-none focus:border-accent focus:bg-surface"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Category Filter Tabs */}
+            <div className="flex items-center gap-1 pb-2 border-b border-border/50 overflow-x-auto">
+              {["All", "Fruit Crops", "Timber", "Spices"].map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
+                    selectedCategory === cat
+                      ? "bg-[#1C5F9D] text-white"
+                      : "bg-surface text-text-muted hover:bg-surface-hover hover:text-text"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Crops List */}
+            <div className="max-h-64 overflow-y-auto divide-y divide-border/30 pt-1">
+              {filteredCrops.length === 0 ? (
+                <div className="py-6 text-center text-xs text-text-muted">
+                  No crops found matching "{searchQuery}"
+                </div>
+              ) : (
+                filteredCrops.map((crop) => {
+                  const isSelected =
+                    crop.name.toLowerCase() === value?.toLowerCase();
+                  return (
+                    <button
+                      key={crop.name}
+                      type="button"
+                      onClick={() => {
+                        onChange(crop.name);
+                        setOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-left transition-colors cursor-pointer rounded-xl ${
+                        isSelected
+                          ? "bg-[#1C5F9D]/10 text-text font-semibold"
+                          : "hover:bg-surface-hover text-text"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-xl shrink-0">{crop.icon}</span>
+                        <div className="truncate">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-text truncate">
+                              {crop.name}
+                            </span>
+                            <span className="text-[10px] font-bold text-[#1C5F9D] px-1.5 py-0.5 rounded-md bg-[#1C5F9D]/10">
+                              {crop.badge}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-text-muted truncate">
+                            {crop.timeline} • {crop.category}
+                          </p>
+                        </div>
+                      </div>
+
+                      {isSelected && (
+                        <Check className="size-4 text-[#1C5F9D] shrink-0" />
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </PopoverPrimitive.Content>
+        </PopoverPrimitive.Portal>
+      </PopoverPrimitive.Root>
+    </div>
+  );
+}
 
 const defaultBorewellFields: CostField[] = [
   { id: "labour", label: "Labour Charges", amount: 15000 },
@@ -131,7 +665,7 @@ const defaultOrganicFarmingFields: CostField[] = [
   { id: "manureCompost", label: "Organic Manure & Bio-Fertilizers", amount: 20000 },
   { id: "farmerFees", label: "Farmer Fees", amount: 18000 },
   { id: "dripIrrigation", label: "Drip Irrigation Setup", amount: 25000 },
-  { id: "saplingsSeeds", label: "Saplings & High-Yield Seed Supply", amount: 12000 },
+  { id: "yieldingCrops", label: "Select Yielding Crops", amount: 0 },
   { id: "bioPestControl", label: "Bio-Pest Control & Mulching", amount: 8000 },
   { id: "tax", label: "Tax (GST)", amount: 3000 },
   { id: "glcFee", label: "GLC Fee", amount: 2000 },
@@ -141,6 +675,36 @@ function formatINR(val: number) {
   return new Intl.NumberFormat("en-IN", {
     maximumFractionDigits: 0,
   }).format(val);
+}
+
+function formatDisplayCustomDate(isoDate?: string): string {
+  if (!isoDate) return "Oct 24, 2031";
+  try {
+    const d = new Date(isoDate);
+    if (isNaN(d.getTime())) return isoDate;
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  } catch {
+    return isoDate;
+  }
+}
+
+function calculateYearsFromDate(isoDate?: string): string {
+  if (!isoDate) return "5";
+  try {
+    const parts = isoDate.split("-").map((p) => parseInt(p, 10));
+    if (parts.length >= 1 && !isNaN(parts[0])) {
+      const diff = parts[0] - 2026;
+      return diff > 0 ? String(diff) : "1";
+    }
+    const d = new Date(isoDate);
+    if (isNaN(d.getTime())) return "5";
+    const baseYear = 2026;
+    const diff = d.getFullYear() - baseYear;
+    return diff > 0 ? String(diff) : "1";
+  } catch {
+    return "5";
+  }
 }
 
 export function GenerateEstimationScreen({
@@ -186,10 +750,6 @@ export function GenerateEstimationScreen({
   } | null>(null);
   const redirectTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  // Organic Farming Crop Popover State
-  const [isCropPopoverOpen, setIsCropPopoverOpen] = React.useState(false);
-  const [cropSearch, setCropSearch] = React.useState("");
-
   React.useEffect(() => {
     return () => {
       if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
@@ -221,7 +781,8 @@ export function GenerateEstimationScreen({
       landSize: record.land || "5.0 Acres",
       organicPlan: "1 Year Plan",
       organicYears: "5",
-      yieldingCrops: ["Mango", "Guava", "Teakwood"],
+      organicCustomDate: "2031-10-24",
+      yieldingCrops: ["Mango"],
       description: "Includes soil pH & nutrient testing, organic composting, micro-drip irrigation installation, certified non-GMO seed/sapling plantation, and biological pest control setup.",
       fields: defaultOrganicFarmingFields,
     },
@@ -236,7 +797,8 @@ export function GenerateEstimationScreen({
     wireRate: "₹50 / Meter",
     organicPlan: "1 Year Plan",
     organicYears: "5",
-    yieldingCrops: ["Mango", "Guava", "Teakwood"],
+    organicCustomDate: "2031-10-24",
+    yieldingCrops: ["Mango"],
     description: "",
     fields: defaultBorewellFields,
   };
@@ -480,6 +1042,7 @@ export function GenerateEstimationScreen({
         landSize: record.land || "5.0 Acres",
         organicPlan: "1 Year Plan",
         organicYears: "5",
+        organicCustomDate: "2031-10-24",
         yieldingCrops: ["Mango", "Guava", "Teakwood"],
         description: "",
         fields: defaultOrganicFarmingFields,
@@ -491,19 +1054,50 @@ export function GenerateEstimationScreen({
           ...currentServiceEst,
           organicPlan: plan,
           organicYears: plan === "5-15 Year Plan" ? currentServiceEst.organicYears || "5" : undefined,
+          organicCustomDate: plan === "5-15 Year Plan" ? currentServiceEst.organicCustomDate || "2031-10-24" : undefined,
         },
       };
     });
   };
 
-  // Update Organic Farming Years for 5-15 Year Plan
+  // Update Organic Farming Custom Date for 5-15 Year Plan
+  const handleOrganicCustomDateChange = (dateVal: string, explicitYears?: string) => {
+    const calculatedYears = explicitYears || calculateYearsFromDate(dateVal);
+    setEstimations((prev) => {
+      const currentServiceEst = prev[activeServiceName] || {
+        landSize: record.land || "5.0 Acres",
+        organicPlan: "5-15 Year Plan",
+        organicYears: calculatedYears,
+        organicCustomDate: dateVal,
+        yieldingCrops: ["Mango", "Guava", "Teakwood"],
+        description: "",
+        fields: defaultOrganicFarmingFields,
+      };
+
+      return {
+        ...prev,
+        [activeServiceName]: {
+          ...currentServiceEst,
+          organicCustomDate: dateVal,
+          organicYears: calculatedYears,
+        },
+      };
+    });
+  };
+
+  // Legacy/Fallback handler for Organic Farming Years
   const handleOrganicYearsChange = (years: string) => {
     const cleanYears = years.replace(/[^0-9]/g, "");
+    const numericYears = parseInt(cleanYears, 10) || 5;
+    const targetYear = 2026 + numericYears;
+    const computedDate = `${targetYear}-10-24`;
+
     setEstimations((prev) => {
       const currentServiceEst = prev[activeServiceName] || {
         landSize: record.land || "5.0 Acres",
         organicPlan: "5-15 Year Plan",
         organicYears: "5",
+        organicCustomDate: "2031-10-24",
         yieldingCrops: ["Mango", "Guava", "Teakwood"],
         description: "",
         fields: defaultOrganicFarmingFields,
@@ -514,83 +1108,30 @@ export function GenerateEstimationScreen({
         [activeServiceName]: {
           ...currentServiceEst,
           organicYears: cleanYears,
+          organicCustomDate: computedDate,
         },
       };
     });
   };
 
-  // Toggle Yielding Crop (Multi-select)
-  const handleToggleYieldingCrop = (crop: string) => {
+  // Update single yielding crop (one selection only)
+  const handleSingleYieldingCropChange = (crop: string) => {
     setEstimations((prev) => {
       const currentServiceEst = prev[activeServiceName] || {
         landSize: record.land || "5.0 Acres",
         organicPlan: "1 Year Plan",
         organicYears: "5",
-        yieldingCrops: ["Mango", "Guava", "Teakwood"],
+        organicCustomDate: "2031-10-24",
+        yieldingCrops: [crop],
         description: "",
         fields: defaultOrganicFarmingFields,
       };
-
-      const existing = currentServiceEst.yieldingCrops || [];
-      const updated = existing.includes(crop)
-        ? existing.filter((c) => c !== crop)
-        : [...existing, crop];
 
       return {
         ...prev,
         [activeServiceName]: {
           ...currentServiceEst,
-          yieldingCrops: updated,
-        },
-      };
-    });
-  };
-
-  // Remove Yielding Crop
-  const handleRemoveYieldingCrop = (crop: string) => {
-    setEstimations((prev) => {
-      const currentServiceEst = prev[activeServiceName] || {
-        landSize: record.land || "5.0 Acres",
-        organicPlan: "1 Year Plan",
-        organicYears: "5",
-        yieldingCrops: ["Mango", "Guava", "Teakwood"],
-        description: "",
-        fields: defaultOrganicFarmingFields,
-      };
-
-      const existing = currentServiceEst.yieldingCrops || [];
-      return {
-        ...prev,
-        [activeServiceName]: {
-          ...currentServiceEst,
-          yieldingCrops: existing.filter((c) => c !== crop),
-        },
-      };
-    });
-  };
-
-  // Add custom crop
-  const handleAddCustomCrop = (customCrop: string) => {
-    const trimmed = customCrop.trim();
-    if (!trimmed) return;
-    setEstimations((prev) => {
-      const currentServiceEst = prev[activeServiceName] || {
-        landSize: record.land || "5.0 Acres",
-        organicPlan: "1 Year Plan",
-        organicYears: "5",
-        yieldingCrops: ["Mango", "Guava", "Teakwood"],
-        description: "",
-        fields: defaultOrganicFarmingFields,
-      };
-
-      const existing = currentServiceEst.yieldingCrops || [];
-      if (existing.some((c) => c.toLowerCase() === trimmed.toLowerCase())) return prev;
-
-      return {
-        ...prev,
-        [activeServiceName]: {
-          ...currentServiceEst,
-          yieldingCrops: [...existing, trimmed],
+          yieldingCrops: [crop],
         },
       };
     });
@@ -1090,193 +1631,27 @@ export function GenerateEstimationScreen({
                     <label className="block text-xs font-semibold text-text-muted mb-2">
                       Organic Farming Plan
                     </label>
-                    <div className="relative">
-                      <select
-                        value={currentEst.organicPlan || "1 Year Plan"}
-                        onChange={(e) =>
-                          handleOrganicPlanChange(
-                            e.target.value as "1 Year Plan" | "5-15 Year Plan"
-                          )
-                        }
-                        className="glc-focus w-full h-12 px-4 pr-10 rounded-2xl bg-surface border border-border/70 text-sm font-semibold text-text appearance-none focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent shadow-xs cursor-pointer"
-                      >
-                        <option value="1 Year Plan">1 Year Plan</option>
-                        <option value="5-15 Year Plan">5-15 Year Plan</option>
-                      </select>
-                      <ChevronDown className="size-4 text-text-muted pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
-                    </div>
+                    <OrganicPlanDropdownUI
+                      value={currentEst.organicPlan || "1 Year Plan"}
+                      onChange={handleOrganicPlanChange}
+                    />
                   </div>
 
-                  {/* If 5-15 Year Plan is selected, show another field to add years */}
+                  {/* If 5-15 Year Plan is selected, show Custom Date field */}
                   {currentEst.organicPlan === "5-15 Year Plan" && (
                     <div className="w-full animate-in fade-in duration-200">
                       <label className="block text-xs font-semibold text-text-muted mb-2">
-                        Add Years (5–15 Years)
+                        Custom Date (1–15 Years)
                       </label>
-                      <div className="relative flex items-center">
-                        <input
-                          type="number"
-                          min={5}
-                          max={15}
-                          placeholder="e.g. 5, 10, 15"
-                          value={currentEst.organicYears?.replace(/[^0-9]/g, "") || "5"}
-                          onChange={(e) => handleOrganicYearsChange(e.target.value)}
-                          className="glc-focus w-full h-12 px-4 pr-16 rounded-2xl bg-surface border border-border/70 text-sm font-semibold text-text placeholder:text-text-muted/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent shadow-xs"
-                        />
-                        <span className="absolute right-4 text-xs font-semibold text-text-muted pointer-events-none">
-                          Years
-                        </span>
-                      </div>
+                      <OrganicCustomDatePicker
+                        value={currentEst.organicCustomDate || "2031-10-24"}
+                        onChange={handleOrganicCustomDateChange}
+                      />
                     </div>
                   )}
                 </>
               )}
             </div>
-
-            {/* Yielding Crops Multi-Select (For Organic Farming) */}
-            {activeServiceName === "Organic Farming" && (
-              <div className="w-full rounded-2xl bg-surface border border-border/70 p-4 sm:p-5 shadow-xs space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-text">
-                        Select Yielding Crops
-                      </label>
-                      <span className="text-[10px] font-bold text-[#1C5F9D] px-2 py-0.5 rounded-full bg-[#1C5F9D]/10">
-                        Multi-Select ({(currentEst.yieldingCrops || []).length})
-                      </span>
-                    </div>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      Select commercial & yielding tree/fruit varieties to cultivate under this organic plan.
-                    </p>
-                  </div>
-
-                  <PopoverPrimitive.Root open={isCropPopoverOpen} onOpenChange={setIsCropPopoverOpen}>
-                    <PopoverPrimitive.Trigger asChild>
-                      <button
-                        type="button"
-                        className="glc-focus inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1C5F9D] hover:bg-[#164E83] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
-                      >
-                        <Plus className="size-3.5" />
-                        <span>Add / Manage Crops</span>
-                        <ChevronDown className={`size-3.5 transition-transform duration-200 ${isCropPopoverOpen ? "rotate-180" : ""}`} />
-                      </button>
-                    </PopoverPrimitive.Trigger>
-
-                    <PopoverPrimitive.Content
-                      align="end"
-                      sideOffset={8}
-                      className="z-50 w-72 sm:w-80 rounded-2xl border border-border bg-surface p-3 shadow-high animate-in fade-in zoom-in-95 duration-150"
-                    >
-                      <div className="space-y-3">
-                        {/* Search Input */}
-                        <div className="relative">
-                          <Search className="size-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
-                          <input
-                            type="text"
-                            placeholder="Search or type custom crop..."
-                            value={cropSearch}
-                            onChange={(e) => setCropSearch(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && cropSearch.trim()) {
-                                e.preventDefault();
-                                handleAddCustomCrop(cropSearch);
-                                setCropSearch("");
-                              }
-                            }}
-                            className="w-full h-9 pl-9 pr-3 rounded-lg border border-border bg-surface text-xs text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
-                          />
-                        </div>
-
-                        {/* Add custom crop button if typed something not in list */}
-                        {cropSearch.trim() &&
-                          !availableYieldingCrops.some(
-                            (c) => c.toLowerCase() === cropSearch.trim().toLowerCase()
-                          ) &&
-                          !(currentEst.yieldingCrops || []).some(
-                            (c) => c.toLowerCase() === cropSearch.trim().toLowerCase()
-                          ) && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleAddCustomCrop(cropSearch);
-                                setCropSearch("");
-                              }}
-                              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-accent bg-accent/10 hover:bg-accent/20 transition-colors cursor-pointer"
-                            >
-                              <Plus className="size-3.5" />
-                              <span>Add &ldquo;{cropSearch.trim()}&rdquo;</span>
-                            </button>
-                          )}
-
-                        {/* Crops List */}
-                        <div className="max-h-56 overflow-y-auto divide-y divide-border/30 pr-1 space-y-1">
-                          {availableYieldingCrops
-                            .filter((c) =>
-                              c.toLowerCase().includes(cropSearch.toLowerCase().trim())
-                            )
-                            .map((crop) => {
-                              const isSelected = (currentEst.yieldingCrops || []).includes(crop);
-                              return (
-                                <button
-                                  key={crop}
-                                  type="button"
-                                  onClick={() => handleToggleYieldingCrop(crop)}
-                                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer text-left ${
-                                    isSelected
-                                      ? "bg-[#EBF5FB] text-[#1C5F9D] font-semibold"
-                                      : "hover:bg-surface-hover text-text"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={`size-4 rounded grid place-items-center border ${
-                                        isSelected
-                                          ? "bg-[#1C5F9D] border-[#1C5F9D] text-white"
-                                          : "border-border-strong bg-white"
-                                      }`}
-                                    >
-                                      {isSelected && <Check className="size-3" />}
-                                    </div>
-                                    <span>{crop}</span>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    </PopoverPrimitive.Content>
-                  </PopoverPrimitive.Root>
-                </div>
-
-                {/* Selected Crop Pills List */}
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {(currentEst.yieldingCrops || []).length > 0 ? (
-                    (currentEst.yieldingCrops || []).map((crop) => (
-                      <span
-                        key={crop}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EBF5FB] border border-[#BDE0FE] text-xs font-semibold text-[#1C5F9D] shadow-2xs"
-                      >
-                        <Sprout className="size-3.5 text-[#16A34A]" />
-                        <span>{crop}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveYieldingCrop(crop)}
-                          aria-label={`Remove ${crop}`}
-                          className="size-4 rounded-full grid place-items-center hover:bg-[#1C5F9D]/20 text-[#1C5F9D] transition-colors cursor-pointer"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-xs text-text-muted italic py-1">
-                      No yielding crops selected yet. Click &ldquo;Add / Manage Crops&rdquo; to choose crops.
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* DETAILED ITEMIZED CHARGES GRID */}
             <div>
@@ -1285,46 +1660,84 @@ export function GenerateEstimationScreen({
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 sm:gap-5">
-                {currentEst.fields.map((field) => (
-                  <div
-                    key={field.id}
-                    className="p-4 rounded-2xl bg-surface border border-border/70 shadow-xs flex flex-col justify-between gap-2.5 hover:border-border-strong transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-baseline gap-1.5 flex-wrap">
-                        <span className="text-xs font-semibold text-text">
-                          {field.label}
-                        </span>
-                        {field.id === "estimatedFeets" && activeServiceName === "Borewell" && (
-                          <span className="text-[11px] text-text-muted font-medium">
-                            ({currentEst.estimatedFeet?.replace(/[^0-9]/g, "") || "450"} ft × ₹{currentEst.perFeetRate?.replace(/[^0-9]/g, "") || "100"})
-                          </span>
-                        )}
-                        {field.id === "wireLength" && activeServiceName === "Fencing" && (
-                          <span className="text-[11px] text-text-muted font-medium">
-                            ({currentEst.wireLength?.replace(/[^0-9]/g, "") || "1200"} m × ₹{currentEst.wireRate?.replace(/[^0-9]/g, "") || "50"})
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-text-muted shrink-0">
-                        INR
-                      </span>
-                    </div>
+                {currentEst.fields.map((field) => {
+                  const isYieldingCropField =
+                    field.id === "yieldingCrops" || field.id === "saplingsSeeds";
 
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3.5 text-sm font-bold text-text-muted pointer-events-none">
-                        ₹
-                      </span>
-                      <input
-                        type="text"
-                        value={field.amount !== "" ? formatINR(typeof field.amount === "number" ? field.amount : parseInt(String(field.amount), 10) || 0) : ""}
-                        placeholder="0"
-                        onChange={(e) => handleCostFieldChange(field.id, e.target.value)}
-                        className="glc-focus w-full h-11 pl-7 pr-3.5 rounded-xl bg-[#F8FAFC] border border-border/50 text-sm font-bold text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-                      />
+                  if (isYieldingCropField && activeServiceName === "Organic Farming") {
+                    return (
+                      <div
+                        key={field.id}
+                        className="p-4 rounded-2xl bg-surface border border-border/70 shadow-xs flex flex-col justify-between gap-2.5 hover:border-border-strong transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-semibold text-text">
+                            Select Yielding Crops
+                          </span>
+                          <span className="text-[10px] font-bold text-[#1C5F9D] px-2 py-0.5 rounded-full bg-[#1C5F9D]/10">
+                            Crop Variety
+                          </span>
+                        </div>
+
+                        {/* Dropdown to select ONE crop only with custom UI */}
+                        <YieldingCropDropdownUI
+                          value={currentEst.yieldingCrops?.[0] || "Mango"}
+                          onChange={handleSingleYieldingCropChange}
+                          size="sm"
+                        />
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={field.id}
+                      className="p-4 rounded-2xl bg-surface border border-border/70 shadow-xs flex flex-col justify-between gap-2.5 hover:border-border-strong transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                          <span className="text-xs font-semibold text-text">
+                            {field.label}
+                          </span>
+                          {field.id === "estimatedFeets" && activeServiceName === "Borewell" && (
+                            <span className="text-[11px] text-text-muted font-medium">
+                              ({currentEst.estimatedFeet?.replace(/[^0-9]/g, "") || "450"} ft × ₹{currentEst.perFeetRate?.replace(/[^0-9]/g, "") || "100"})
+                            </span>
+                          )}
+                          {field.id === "wireLength" && activeServiceName === "Fencing" && (
+                            <span className="text-[11px] text-text-muted font-medium">
+                              ({currentEst.wireLength?.replace(/[^0-9]/g, "") || "1200"} m × ₹{currentEst.wireRate?.replace(/[^0-9]/g, "") || "50"})
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-text-muted shrink-0">
+                          INR
+                        </span>
+                      </div>
+
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3.5 text-sm font-bold text-text-muted pointer-events-none">
+                          ₹
+                        </span>
+                        <input
+                          type="text"
+                          value={
+                            field.amount !== ""
+                              ? formatINR(
+                                  typeof field.amount === "number"
+                                    ? field.amount
+                                    : parseInt(String(field.amount), 10) || 0
+                                )
+                              : ""
+                          }
+                          placeholder="0"
+                          onChange={(e) => handleCostFieldChange(field.id, e.target.value)}
+                          className="glc-focus w-full h-11 pl-7 pr-3.5 rounded-xl bg-[#F8FAFC] border border-border/50 text-sm font-bold text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -1358,7 +1771,7 @@ export function GenerateEstimationScreen({
                       : activeServiceName === "Fencing"
                       ? "Sum of Labour, Inspection, Wire Length, Materials, Poles, Gate, Tax & GLC Fees"
                       : activeServiceName === "Organic Farming"
-                      ? "Sum of Soil Testing, Manure, Farmer Fees, Drip Irrigation, Seeds, Pest Control, Tax & GLC Fees"
+                      ? "Sum of Soil Testing, Manure, Farmer Fees, Drip Irrigation, Yielding Crops, Pest Control, Tax & GLC Fees"
                       : "Sum of all itemized charges, taxes and official GLC fees"}
                   </p>
                 </div>
@@ -1450,14 +1863,27 @@ export function GenerateEstimationScreen({
                     <span className="font-semibold text-text-muted">Organic Plan</span>
                     <span className="font-bold text-text">
                       {currentEst.organicPlan || "1 Year Plan"}
-                      {currentEst.organicPlan === "5-15 Year Plan" ? ` (${currentEst.organicYears || "5"} Years)` : ""}
+                      {currentEst.organicPlan === "5-15 Year Plan" ? ` (${currentEst.organicYears || calculateYearsFromDate(currentEst.organicCustomDate)} Years)` : ""}
                     </span>
                   </div>
+                  {currentEst.organicPlan === "5-15 Year Plan" && currentEst.organicCustomDate && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-text-muted">Custom Date</span>
+                      <span className="font-bold text-[#1C5F9D]">
+                        {formatDisplayCustomDate(currentEst.organicCustomDate)}
+                      </span>
+                    </div>
+                  )}
                   {currentEst.yieldingCrops && currentEst.yieldingCrops.length > 0 && (
-                    <div className="flex items-start justify-between text-xs">
-                      <span className="font-semibold text-text-muted pt-0.5">Yielding Crops</span>
-                      <span className="font-bold text-text text-right max-w-[200px] leading-tight">
-                        {currentEst.yieldingCrops.join(", ")}
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-text-muted">Yielding Crop</span>
+                      <span className="font-bold text-[#1C5F9D] flex items-center gap-1.5">
+                        <span>
+                          {detailedYieldingCrops.find(
+                            (c) => c.name.toLowerCase() === currentEst.yieldingCrops?.[0]?.toLowerCase()
+                          )?.icon || "🥭"}
+                        </span>
+                        <span>{currentEst.yieldingCrops[0] || "Mango"}</span>
                       </span>
                     </div>
                   )}
