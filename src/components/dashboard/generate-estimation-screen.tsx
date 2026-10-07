@@ -666,6 +666,8 @@ const defaultOrganicFarmingFields: CostField[] = [
   { id: "farmerFees", label: "Farmer Fees", amount: 18000 },
   { id: "dripIrrigation", label: "Drip Irrigation Setup", amount: 25000 },
   { id: "yieldingCrops", label: "Select Yielding Crops", amount: 0 },
+  { id: "seedCharges", label: "Seed Charges", amount: 10000 },
+  { id: "plantingCharges", label: "Planting Charges", amount: 8000 },
   { id: "bioPestControl", label: "Bio-Pest Control & Mulching", amount: 8000 },
   { id: "tax", label: "Tax (GST)", amount: 3000 },
   { id: "glcFee", label: "GLC Fee", amount: 2000 },
