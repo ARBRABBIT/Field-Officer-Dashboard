@@ -632,7 +632,7 @@ const defaultBorewellFields: CostField[] = [
   { id: "labour", label: "Labour Charges", amount: 15000 },
   { id: "inspection", label: "Inspection Charges", amount: 5000 },
   { id: "estimatedFeets", label: "Estimated Feets", amount: 45000 },
-  { id: "borewell", label: "Borewell Charges", amount: 20000 },
+  { id: "casingPipe", label: "Casing Pipe Charges", amount: 20000 },
   { id: "pump", label: "Pump Charges", amount: 35000 },
   { id: "electric", label: "Electric Charges", amount: 12000 },
   { id: "tax", label: "Tax (GST)", amount: 8000 },
