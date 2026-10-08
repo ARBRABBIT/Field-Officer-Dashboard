@@ -4,23 +4,28 @@ import * as React from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  ArrowRight,
   Bell,
   Calculator,
   Calendar,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   DollarSign,
+  Droplets,
   FileCheck,
   FileText,
+  Home,
   LandPlot,
   MapPin,
   Plus,
   Receipt,
   Search,
   Send,
+  Shield,
   Sparkles,
   Sprout,
   Trees,
@@ -745,6 +750,13 @@ export function GenerateEstimationScreen({
   const activeServiceName = availableServices[activeServiceIdx] || availableServices[0] || "Borewell";
   const [confirmedServices, setConfirmedServices] = React.useState<Set<string>>(new Set());
   const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false);
+  const [isAllServicesPreviewOpen, setIsAllServicesPreviewOpen] = React.useState(false);
+  const [expandedServices, setExpandedServices] = React.useState<Record<string, boolean>>({
+    Borewell: true,
+    Fencing: true,
+    "Farmhouse Construction": true,
+    "Organic Farming": true,
+  });
   const [redirectingStage, setRedirectingStage] = React.useState<{
     nextServiceName: string;
     nextIndex?: number;
@@ -1150,7 +1162,82 @@ export function GenerateEstimationScreen({
   const rawId = record.farmlandId ? record.farmlandId.replace(/\D/g, "") || "01" : "01";
   const displayId = `ID ${rawId}`;
 
+  // Helper to calculate total for any service
+  const getServiceTotal = React.useCallback(
+    (serviceName: string) => {
+      const est = estimations[serviceName];
+      if (!est) return 0;
+      return est.fields.reduce((sum, item) => {
+        const num =
+          typeof item.amount === "number"
+            ? item.amount
+            : parseInt(String(item.amount).replace(/,/g, "") || "0", 10) || 0;
+        return sum + num;
+      }, 0);
+    },
+    [estimations]
+  );
+
+  // Grand total for all requested services
+  const grandTotalAllServices = React.useMemo(() => {
+    return availableServices.reduce((sum, s) => sum + getServiceTotal(s), 0);
+  }, [availableServices, getServiceTotal]);
+
+  const toggleServiceExpanded = (serviceName: string) => {
+    setExpandedServices((prev) => ({
+      ...prev,
+      [serviceName]: !prev[serviceName],
+    }));
+  };
+
+  const getServiceIcon = (serviceName: string) => {
+    const s = serviceName.toLowerCase();
+    if (s.includes("borewell")) {
+      return <Droplets className="size-4 text-[#1C5F9D]" />;
+    }
+    if (s.includes("fencing")) {
+      return <Shield className="size-4 text-[#00801F]" />;
+    }
+    if (s.includes("farmhouse")) {
+      return <Home className="size-4 text-[#854D0E]" />;
+    }
+    if (s.includes("organic")) {
+      return <Sprout className="size-4 text-[#166534]" />;
+    }
+    return <Trees className="size-4 text-[#1C5F9D]" />;
+  };
+
+  const getServiceSummaryText = (
+    serviceName: string,
+    est: ServiceEstimationState
+  ) => {
+    const s = serviceName.toLowerCase();
+    if (s.includes("borewell")) {
+      return `${est.estimatedFeet || "450 Feet"} • ${est.perFeetRate || "₹100 / Foot"}`;
+    }
+    if (s.includes("fencing")) {
+      return `${est.wireLength || "1,200 Meters"} Wire • ${est.wireRate || "₹50 / Meter"}`;
+    }
+    if (s.includes("farmhouse")) {
+      return "2-BHK Structure Foundation & Finishing";
+    }
+    if (s.includes("organic")) {
+      const plan = est.organicPlan || "1 Year Plan";
+      const crop = est.yieldingCrops?.[0] || "Mango";
+      return `${plan} • Yielding Crop: ${crop}`;
+    }
+    return est.description ? est.description.slice(0, 45) + "..." : "";
+  };
+
   const handleDispatch = () => {
+    // If all services are already confirmed, dispatch button directly opens full preview
+    const allOthersConfirmed = availableServices.every(
+      (s) => s === activeServiceName || confirmedServices.has(s)
+    );
+    if (confirmedServices.has(activeServiceName) && allOthersConfirmed) {
+      setIsAllServicesPreviewOpen(true);
+      return;
+    }
     setIsConfirmModalOpen(true);
   };
 
@@ -1162,8 +1249,18 @@ export function GenerateEstimationScreen({
 
     if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
 
-    // Advance to next service tab (e.g. Borewell -> Fencing -> Farmhouse -> Organic Farming)
+    // Check if this is the last service or if all services are now confirmed
     const nextIdx = activeServiceIdx + 1;
+    const allConfirmed = availableServices.every((s) => updatedConfirmed.has(s));
+    const isLastService = nextIdx >= availableServices.length || allConfirmed;
+
+    if (isLastService) {
+      // Hey when confirm last service it should give a preview pop up of all the services and then give proceed CTA
+      setIsAllServicesPreviewOpen(true);
+      return;
+    }
+
+    // Advance to next service tab (e.g. Borewell -> Fencing -> Farmhouse -> Organic Farming)
     if (nextIdx < availableServices.length) {
       const nextName = availableServices[nextIdx];
       setRedirectingStage({
@@ -1194,21 +1291,18 @@ export function GenerateEstimationScreen({
           setRedirectingStage(null);
         }, 1800);
       } else {
-        // Last service finished, advance to next stage (Active Work Order)
-        setRedirectingStage({
-          nextServiceName: "Work Order",
-          isWorkOrder: true,
-        });
-
-        redirectTimeoutRef.current = setTimeout(() => {
-          setRedirectingStage(null);
-          if (onSuccess) {
-            onSuccess();
-          } else {
-            onBack();
-          }
-        }, 1800);
+        // Last service confirmed, open preview popup of all services
+        setIsAllServicesPreviewOpen(true);
       }
+    }
+  };
+
+  const handleProceedFromPreview = () => {
+    setIsAllServicesPreviewOpen(false);
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      onBack();
     }
   };
 
@@ -1790,7 +1884,17 @@ export function GenerateEstimationScreen({
             </div>
 
             {/* Bottom Footer Actions */}
-            <div className="flex items-center justify-end gap-4 pt-4 border-t border-[#EAEFF4] mt-2">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EAEFF4] mt-2 flex-wrap">
+              {confirmedServices.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsAllServicesPreviewOpen(true)}
+                  className="glc-focus h-12 px-6 rounded-full border border-border/80 bg-surface hover:bg-surface-hover text-text font-semibold text-xs sm:text-sm uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <ClipboardList className="size-4 text-[#1C5F9D]" />
+                  <span>Preview All Services</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleDispatch}
@@ -1916,7 +2020,253 @@ export function GenerateEstimationScreen({
                 style={{ fontWeight: 600 }}
                 className="glc-focus h-12 px-7 rounded-full bg-[#96C9ED] hover:bg-[#7FBDE9] active:scale-[0.99] text-black font-semibold text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-2"
               >
-                <span>Confirm & Dispatch</span>
+                <span>
+                  {activeServiceIdx === availableServices.length - 1 ||
+                  availableServices.every(
+                    (s) => s === activeServiceName || confirmedServices.has(s)
+                  )
+                    ? "Confirm & Preview All Services"
+                    : "Confirm & Dispatch"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ALL SERVICES PREVIEW MODAL */}
+      {isAllServicesPreviewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            className="w-full max-w-4xl max-h-[92vh] bg-surface rounded-[28px] border border-border shadow-high flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="all-services-preview-title"
+          >
+            {/* Sticky Header */}
+            <div className="flex items-start justify-between gap-4 p-5 sm:p-6 pb-4 border-b border-border/70 bg-surface shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="size-12 rounded-2xl bg-[#96C9ED]/20 text-[#1C5F9D] grid place-items-center shrink-0">
+                  <ClipboardList className="size-6 text-[#1C5F9D]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3
+                      id="all-services-preview-title"
+                      className="text-lg sm:text-xl font-bold text-text"
+                    >
+                      All Services Estimation Preview
+                    </h3>
+                    <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#E5F6E6] text-[#00801F] border border-[#00801F]/20">
+                      <Check className="size-3" />
+                      All Services Confirmed
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    Review comprehensive breakdown across all{" "}
+                    {availableServices.length} requested services before proceeding to work order.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAllServicesPreviewOpen(false)}
+                aria-label="Close modal to edit"
+                className="size-8 rounded-full grid place-items-center text-text-muted hover:text-text hover:bg-surface-muted transition-colors cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+              {/* Customer & Farmland Overview Strip */}
+              <div className="rounded-2xl bg-[#F8FAFC] border border-border/70 p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                <div>
+                  <span className="text-[11px] font-semibold text-text-muted block">
+                    Customer
+                  </span>
+                  <span className="text-sm font-bold text-text mt-0.5 block">
+                    {record.customer}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] font-semibold text-text-muted block">
+                    Farmland ID
+                  </span>
+                  <span className="text-sm font-bold text-text mt-0.5 block">
+                    {displayId}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] font-semibold text-text-muted block">
+                    Land Size
+                  </span>
+                  <span className="text-sm font-bold text-text mt-0.5 block">
+                    {record.land || "5.0 Acres"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] font-semibold text-text-muted block">
+                    Location
+                  </span>
+                  <span className="text-sm font-bold text-text mt-0.5 block truncate">
+                    {record.location || "Hyderabad, Telangana"}
+                  </span>
+                </div>
+              </div>
+
+              {/* List of All Services */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                    Itemized Service Breakdown ({availableServices.length} Services)
+                  </h4>
+                  <span className="text-xs text-text-muted">
+                    Click any service to toggle line items
+                  </span>
+                </div>
+
+                <div className="space-y-3.5">
+                  {availableServices.map((sName) => {
+                    const sTotal = getServiceTotal(sName);
+                    const est = estimations[sName] || { fields: [] };
+                    const isExpanded = expandedServices[sName] ?? true;
+
+                    return (
+                      <div
+                        key={sName}
+                        className="rounded-2xl border border-border/80 bg-surface overflow-hidden shadow-2xs hover:border-[#1C5F9D]/30 transition-colors"
+                      >
+                        {/* Service Header Row */}
+                        <div
+                          onClick={() => toggleServiceExpanded(sName)}
+                          className="p-4 sm:p-4.5 bg-[#FAFBFD] flex items-center justify-between gap-3 cursor-pointer select-none hover:bg-surface-hover/80 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="size-9 rounded-xl bg-surface border border-border/60 grid place-items-center shrink-0 shadow-2xs">
+                              {getServiceIcon(sName)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-sm text-text">
+                                  {sName}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E5F6E6] text-[#00801F] border border-[#00801F]/20">
+                                  Confirmed
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-text-muted truncate mt-0.5">
+                                {getServiceSummaryText(sName, est)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right">
+                              <span className="text-[10px] uppercase font-bold text-text-muted block">
+                                Quotation
+                              </span>
+                              <span className="text-sm sm:text-base font-extrabold text-[#1C5F9D]">
+                                ₹{formatINR(sTotal)}
+                              </span>
+                            </div>
+                            <span className="text-text-muted p-1">
+                              <ChevronDown
+                                className={`size-4 transition-transform duration-200 ${
+                                  isExpanded ? "rotate-180" : ""
+                                }`}
+                              />
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Expanded Itemized Line Items */}
+                        {isExpanded && (
+                          <div className="p-4 sm:p-4.5 border-t border-border/60 bg-surface">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                              {est.fields.map((fld) => {
+                                const amt =
+                                  typeof fld.amount === "number"
+                                    ? fld.amount
+                                    : parseInt(
+                                        String(fld.amount).replace(/,/g, "") ||
+                                          "0",
+                                        10
+                                      ) || 0;
+                                return (
+                                  <div
+                                    key={fld.id}
+                                    className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8FAFC] border border-border/40"
+                                  >
+                                    <span className="text-text-muted truncate mr-2">
+                                      {fld.label}
+                                    </span>
+                                    <span className="font-semibold text-text shrink-0">
+                                      {amt === 0 && fld.id === "yieldingCrops" ? (
+                                        <span className="text-[#1C5F9D] font-bold">
+                                          {est.yieldingCrops?.[0] || "Selected"}
+                                        </span>
+                                      ) : (
+                                        `₹${formatINR(amt)}`
+                                      )}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Grand Total Summary Card */}
+              <div className="rounded-2xl bg-gradient-to-br from-[#1C5F9D]/8 via-[#96C9ED]/15 to-[#1C5F9D]/5 border-2 border-[#1C5F9D]/30 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1C5F9D] text-white uppercase tracking-wider">
+                    Consolidated Final Quotation
+                  </span>
+                  <h4 className="text-base font-bold text-text pt-1">
+                    Grand Total ({availableServices.length} Services Combined)
+                  </h4>
+                  <p className="text-xs text-text-muted max-w-md">
+                    Includes all field machinery, labour, materials, organic setup, seed & planting charges, taxes (GST), and platform fee.
+                  </p>
+                </div>
+
+                <div className="text-left sm:text-right shrink-0 bg-surface/90 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none w-full sm:w-auto border sm:border-0 border-border/40">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted block">
+                    Total Quotation Amount
+                  </span>
+                  <span className="text-2xl sm:text-3xl font-extrabold text-[#1C5F9D] tracking-tight">
+                    ₹{formatINR(grandTotalAllServices)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sticky Modal Footer with Proceed CTA */}
+            <div className="p-4 sm:p-5 border-t border-border/80 bg-surface flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsAllServicesPreviewOpen(false)}
+                className="w-full sm:w-auto h-11 px-6 rounded-full border border-border/80 bg-surface hover:bg-surface-hover text-text font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="size-4" />
+                <span>Back to Edit</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleProceedFromPreview}
+                style={{ fontWeight: 600 }}
+                className="w-full sm:w-auto h-11 px-8 rounded-full bg-[#96C9ED] hover:bg-[#7FBDE9] active:scale-[0.99] text-black font-semibold text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>Proceed to Work Order</span>
+                <ArrowRight className="size-4" />
               </button>
             </div>
           </div>
